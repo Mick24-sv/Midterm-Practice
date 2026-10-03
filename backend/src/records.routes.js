@@ -4,6 +4,23 @@ import requireAuthentication from "./auth.middleware.js";
 
 const router = Router();
 
+router.get("/", requireAuthentication, (request, response, next) => {
+  try {
+    const records = database
+      .prepare(
+        `SELECT id, title, description, status, owner_id, created_at, updated_at
+         FROM records
+         WHERE owner_id = ?
+         ORDER BY created_at DESC, id DESC`
+      )
+      .all(request.user.id);
+
+    return response.json({ records });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post("/", requireAuthentication, (request, response, next) => {
   const body = request.body;
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
