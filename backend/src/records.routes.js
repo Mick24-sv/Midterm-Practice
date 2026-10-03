@@ -5,15 +5,35 @@ import requireAuthentication from "./auth.middleware.js";
 const router = Router();
 
 router.get("/", requireAuthentication, (request, response, next) => {
+  const query = request.query.q;
+  if (query !== undefined && (typeof query !== "string" || query.length > 200)) {
+    return response.status(400).json({ error: "Search query must be a string of at most 200 characters." });
+  }
+
   try {
-    const records = database
-      .prepare(
-        `SELECT id, title, description, status, owner_id, created_at, updated_at
-         FROM records
-         WHERE owner_id = ?
-         ORDER BY created_at DESC, id DESC`
-      )
-      .all(request.user.id);
+    const normalizedQuery = query?.trim();
+    const records = normalizedQuery
+      ? database
+        .prepare(
+          `SELECT id, title, description, status, owner_id, created_at, updated_at
+           FROM records
+           WHERE owner_id = ?
+             AND (title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')
+           ORDER BY created_at DESC, id DESC`
+        )
+        .all(
+          request.user.id,
+          `%${normalizedQuery.replace(/[\\%_]/g, "\\$&")}%`,
+          `%${normalizedQuery.replace(/[\\%_]/g, "\\$&")}%`,
+        )
+      : database
+        .prepare(
+          `SELECT id, title, description, status, owner_id, created_at, updated_at
+           FROM records
+           WHERE owner_id = ?
+           ORDER BY created_at DESC, id DESC`
+        )
+        .all(request.user.id);
 
     return response.json({ records });
   } catch (error) {

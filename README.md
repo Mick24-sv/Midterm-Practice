@@ -42,6 +42,6 @@ Passwords must be 8–72 UTF-8 bytes. The API never returns password hashes.
 
 ### Records API
 
-- `GET /api/records` requires `Authorization: Bearer <token>` and returns `{ "records": [...] }` containing only records owned by the authenticated user, newest first. An account with no records receives an empty array. Missing or invalid tokens return `401`.
+- `GET /api/records` requires `Authorization: Bearer <token>` and returns `{ "records": [...] }` containing only records owned by the authenticated user, newest first. An optional `q` parameter searches titles and descriptions (case-insensitive substring match), for example `/api/records?q=project`. `%` and `_` are treated as literal characters. The query must be at most 200 characters. An account with no matches receives an empty array. Missing or invalid tokens return `401`; invalid query parameters return `400`.
 - `POST /api/records` requires `Authorization: Bearer <token>` and accepts `{ "title": "Example record", "description": "Details", "status": "active" }`. The title is required (up to 200 characters); description is optional (up to 5000 characters); status defaults to `active` and may be `active` or `archived`.
 - It returns `201` with the created record. Ownership is taken from the authenticated account, not the request body. Missing or invalid tokens return `401`; invalid fields return `400`.
