@@ -20,4 +20,7 @@ npm run dev
 The API listens on port `3000` by default and stores data in
 `backend/data/mini-management.sqlite`. Verify it is running at
 `http://localhost:3000/api/health`; the endpoint also checks the database
-connection. Use `npm start` to run the backend without the development watcher.
+connection. On startup, the backend creates the `users` and `records` tables
+and their indexes if they do not already exist. Records may optionally belong
+to a user; deleting that user leaves the record and clears its owner.
+Use `npm start` to run the backend without the development watcher.

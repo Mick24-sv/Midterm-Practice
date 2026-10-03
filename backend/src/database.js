@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
@@ -15,5 +15,6 @@ mkdirSync(dirname(databasePath), { recursive: true });
 const database = new Database(databasePath);
 database.pragma("foreign_keys = ON");
 database.pragma("journal_mode = WAL");
+database.exec(readFileSync(new URL("./schema.sql", import.meta.url), "utf8"));
 
 export default database;
