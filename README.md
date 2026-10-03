@@ -11,7 +11,12 @@ npm install
 
 Copy `.env.example` to `.env` to customize the server port and SQLite database
 path. The database file and its parent directory are created automatically.
-Relative database paths are resolved from `backend/`. Start the API with:
+Relative database paths are resolved from `backend/`. Set `JWT_SECRET` to a
+random secret of at least 32 bytes before starting the API. Generate one with
+`node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`
+from the `backend/` directory.
+
+Start the API with:
 
 ```sh
 npm run dev
@@ -21,6 +26,16 @@ The API listens on port `3000` by default and stores data in
 `backend/data/mini-management.sqlite`. Verify it is running at
 `http://localhost:3000/api/health`; the endpoint also checks the database
 connection. On startup, the backend creates the `users` and `records` tables
-and their indexes if they do not already exist. Records may optionally belong
-to a user; deleting that user leaves the record and clears its owner.
+and their indexes if they do not already exist. User registration stores a
+bcrypt password hash; existing accounts receive a nullable password-hash
+column and must register a new account to use password login.
+Records may optionally belong to a user; deleting that user leaves the record
+and clears its owner.
 Use `npm start` to run the backend without the development watcher.
+
+### Authentication API
+
+- `POST /api/auth/register` accepts `{ "name": "Ada", "email": "ada@example.com", "password": "at-least-8-characters" }`. It returns `201` with the safe user profile and a one-hour Bearer JWT. Duplicate email addresses return `409`.
+- `POST /api/auth/login` accepts `{ "email": "ada@example.com", "password": "at-least-8-characters" }`. It returns the same token response; invalid credentials return `401`.
+
+Passwords must be 8–72 UTF-8 bytes. The API never returns password hashes.

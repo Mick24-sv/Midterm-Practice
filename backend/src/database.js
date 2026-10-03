@@ -17,4 +17,9 @@ database.pragma("foreign_keys = ON");
 database.pragma("journal_mode = WAL");
 database.exec(readFileSync(new URL("./schema.sql", import.meta.url), "utf8"));
 
+const userColumns = database.pragma("table_info(users)");
+if (!userColumns.some((column) => column.name === "password_hash")) {
+  database.exec("ALTER TABLE users ADD COLUMN password_hash TEXT");
+}
+
 export default database;
