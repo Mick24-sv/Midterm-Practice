@@ -1,0 +1,19 @@
+import "dotenv/config";
+import { mkdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import Database from "better-sqlite3";
+
+const backendDirectory = dirname(dirname(fileURLToPath(import.meta.url)));
+const databasePath = resolve(
+  backendDirectory,
+  process.env.DATABASE_PATH ?? "data/mini-management.sqlite",
+);
+
+mkdirSync(dirname(databasePath), { recursive: true });
+
+const database = new Database(databasePath);
+database.pragma("foreign_keys = ON");
+database.pragma("journal_mode = WAL");
+
+export default database;
