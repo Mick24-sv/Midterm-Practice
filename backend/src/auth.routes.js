@@ -27,7 +27,7 @@ function createToken(user) {
 
 function authenticationResponse(response, user) {
   response.json({
-    user: { id: user.id, name: user.name, email: user.email },
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
     token: createToken(user),
     tokenType: "Bearer",
     expiresIn: tokenLifetimeSeconds,
@@ -62,10 +62,11 @@ router.post("/register", async (request, response, next) => {
       id: Number(result.lastInsertRowid),
       name: normalizedName,
       email: normalizedEmail,
+      role: "user",
     };
 
     return response.status(201).json({
-      user,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
       token: createToken(user),
       tokenType: "Bearer",
       expiresIn: tokenLifetimeSeconds,
@@ -93,7 +94,7 @@ router.post("/login", async (request, response, next) => {
 
   try {
     const user = database
-      .prepare("SELECT id, name, email, password_hash FROM users WHERE email = ?")
+      .prepare("SELECT id, name, email, password_hash, role FROM users WHERE email = ?")
       .get(normalizedEmail);
 
     if (!user?.password_hash || !(await bcrypt.compare(password, user.password_hash))) {

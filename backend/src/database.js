@@ -21,5 +21,10 @@ const userColumns = database.pragma("table_info(users)");
 if (!userColumns.some((column) => column.name === "password_hash")) {
   database.exec("ALTER TABLE users ADD COLUMN password_hash TEXT");
 }
+if (!userColumns.some((column) => column.name === "role")) {
+  database.exec(
+    "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user'))",
+  );
+}
 
 export default database;

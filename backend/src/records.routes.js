@@ -12,16 +12,18 @@ router.get("/", requireAuthentication, (request, response, next) => {
 
   try {
     const normalizedQuery = query?.trim();
+    const isAdmin = request.user.role === "admin";
     const records = normalizedQuery
       ? database
         .prepare(
           `SELECT id, title, description, status, owner_id, created_at, updated_at
            FROM records
-           WHERE owner_id = ?
+           WHERE (? = 1 OR owner_id = ?)
              AND (title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')
            ORDER BY created_at DESC, id DESC`
         )
         .all(
+          isAdmin ? 1 : 0,
           request.user.id,
           `%${normalizedQuery.replace(/[\\%_]/g, "\\$&")}%`,
           `%${normalizedQuery.replace(/[\\%_]/g, "\\$&")}%`,
@@ -30,10 +32,10 @@ router.get("/", requireAuthentication, (request, response, next) => {
         .prepare(
           `SELECT id, title, description, status, owner_id, created_at, updated_at
            FROM records
-           WHERE owner_id = ?
+           WHERE (? = 1 OR owner_id = ?)
            ORDER BY created_at DESC, id DESC`
         )
-        .all(request.user.id);
+        .all(isAdmin ? 1 : 0, request.user.id);
 
     return response.json({ records });
   } catch (error) {

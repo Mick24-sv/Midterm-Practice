@@ -23,14 +23,14 @@ export default function requireAuthentication(request, response, next) {
     }
 
     const user = database
-      .prepare("SELECT id FROM users WHERE id = ?")
+      .prepare("SELECT id, role FROM users WHERE id = ?")
       .get(Number(claims.sub));
 
     if (!user) {
       return response.status(401).json({ error: "Invalid or expired token." });
     }
 
-    request.user = { id: user.id };
+    request.user = { id: user.id, role: user.role };
     return next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError) {

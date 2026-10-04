@@ -27,8 +27,13 @@ The API listens on port `3000` by default and stores data in
 `http://localhost:3000/api/health`; the endpoint also checks the database
 connection. On startup, the backend creates the `users` and `records` tables
 and their indexes if they do not already exist. User registration stores a
-bcrypt password hash; existing accounts receive a nullable password-hash
-column and must register a new account to use password login.
+bcrypt password hash and assigns the `user` role; existing accounts receive a
+nullable password-hash column and a `user` role, and must register a new
+account to use password login. To grant administrator access, run
+`UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';` in a
+trusted SQLite client. Roles are loaded from the database on each
+authenticated request, so role changes take effect immediately. Never accept
+role assignments from public registration.
 Records may optionally belong to a user; deleting that user leaves the record
 and clears its owner.
 Use `npm start` to run the backend without the development watcher.
@@ -39,8 +44,13 @@ Use `npm start` to run the backend without the development watcher.
 - `POST /api/auth/login` accepts `{ "email": "ada@example.com", "password": "at-least-8-characters" }`. It returns the same token response; invalid credentials return `401`.
 
 Passwords must be 8–72 UTF-8 bytes. The API never returns password hashes.
+Registration always assigns the `user` role, even if a role is included in
+the request. Login and registration responses include the account role.
 
 ### Records API
+
+Users can list only their own records; admins can list records owned by any
+user. New records are always owned by the authenticated account.
 
 - `GET /api/records` requires `Authorization: Bearer <token>` and returns `{ "records": [...] }` containing only records owned by the authenticated user, newest first. An optional `q` parameter searches titles and descriptions (case-insensitive substring match), for example `/api/records?q=project`. `%` and `_` are treated as literal characters. The query must be at most 200 characters. An account with no matches receives an empty array. Missing or invalid tokens return `401`; invalid query parameters return `400`.
 - `POST /api/records` requires `Authorization: Bearer <token>` and accepts `{ "title": "Example record", "description": "Details", "status": "active" }`. The title is required (up to 200 characters); description is optional (up to 5000 characters); status defaults to `active` and may be `active` or `archived`.
