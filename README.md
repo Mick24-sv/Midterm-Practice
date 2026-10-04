@@ -46,6 +46,10 @@ Use `npm start` to run the backend without the development watcher.
 Passwords must be 8–72 UTF-8 bytes. The API never returns password hashes.
 Registration always assigns the `user` role, even if a role is included in
 the request. Login and registration responses include the account role.
+The backend rejects invalid field types, malformed email addresses, out-of-range
+field lengths, malformed JSON (`400`), and JSON request bodies larger than
+32 KB (`413`). Login passwords must meet the same 8–72-byte limits as
+registration.
 
 ### Records API
 

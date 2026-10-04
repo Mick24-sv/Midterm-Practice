@@ -2,14 +2,11 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import database from "./database.js";
+import { isObject, isValidEmail, isValidPassword } from "./input-validation.js";
 
 const router = Router();
 const passwordRounds = 12;
 const tokenLifetimeSeconds = 60 * 60;
-
-function isObject(value) {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
 
 function createToken(user) {
   return jwt.sign(
@@ -42,11 +39,9 @@ router.post("/register", async (request, response, next) => {
   if (
     normalizedName.length === 0 ||
     normalizedName.length > 100 ||
-    normalizedEmail.length > 254 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) ||
-    typeof password !== "string" ||
-    Buffer.byteLength(password, "utf8") < 8 ||
-    Buffer.byteLength(password, "utf8") > 72
+    /[\u0000-\u001f\u007f]/.test(normalizedName) ||
+    !isValidEmail(normalizedEmail) ||
+    !isValidPassword(password)
   ) {
     return response.status(400).json({
       error: "Provide a name, valid email, and password between 8 and 72 UTF-8 bytes.",
@@ -84,10 +79,8 @@ router.post("/login", async (request, response, next) => {
   const normalizedEmail = typeof email === "string" ? email.trim() : "";
 
   if (
-    normalizedEmail.length > 254 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) ||
-    typeof password !== "string" ||
-    Buffer.byteLength(password, "utf8") > 72
+    !isValidEmail(normalizedEmail) ||
+    !isValidPassword(password)
   ) {
     return response.status(400).json({ error: "Provide a valid email and password." });
   }
