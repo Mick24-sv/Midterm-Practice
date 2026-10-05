@@ -51,6 +51,29 @@ field lengths, malformed JSON (`400`), and JSON request bodies larger than
 32 KB (`413`). Login passwords must meet the same 8–72-byte limits as
 registration.
 
+### Error Handling
+
+All errors share one JSON shape: `{ "error": "...", "code": "..." }`. Validation
+failures add a `details` array of `{ "field": "...", "message": "..." }` entries
+so clients can highlight the offending inputs. Unexpected failures never expose
+stack traces or database messages; they are logged server-side and returned as
+`500` with `"An unexpected error occurred."`.
+
+- `404 not_found` for any unmatched path, including unknown `/api` routes.
+- `400 invalid_json` for malformed request bodies and `413 payload_too_large` for
+  bodies over 32 KB.
+- `400 validation_error` with per-field `details` for invalid registration,
+  login, record, and search-query input. A non-object body returns
+  `400 invalid_body`.
+- `409 conflict` for duplicate email addresses and SQLite uniqueness conflicts.
+- `401 unauthorized` when no Bearer token is supplied, and `401 invalid_token`
+  for malformed, expired, or unknown-subject tokens.
+- `503 service_unavailable` when `/api/health` cannot reach the database.
+- SQLite check, not-null, and foreign-key violations map to `400` or `409`
+  instead of surfacing as internal errors.
+
+Run the error-handling checks with `npm test` from `backend/`.
+
 ### Records API
 
 Users can list only their own records; admins can list records owned by any

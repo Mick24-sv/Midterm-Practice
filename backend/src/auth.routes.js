@@ -2,7 +2,8 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import database from "./database.js";
-import { isObject, isValidEmail, isValidPassword } from "./input-validation.js";
+import { validateLogin, validateRegistration } from "./input-validation.js";
+import { conflict, unauthorized } from "./errors.js";
 
 const router = Router();
 const passwordRounds = 12;
@@ -32,19 +33,13 @@ function authenticationResponse(response, user) {
 }
 
 router.post("/register", async (request, response, next) => {
-  const { name, email, password } = isObject(request.body) ? request.body : {};
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+  const { name, email, password, details } = validateRegistration(request.body);
 
-  if (
-    normalizedName.length === 0 ||
-    normalizedName.length > 100 ||
-    /[\u0000-\u001f\u007f]/.test(normalizedName) ||
-    !isValidEmail(normalizedEmail) ||
-    !isValidPassword(password)
-  ) {
+  if (details.length > 0) {
     return response.status(400).json({
       error: "Provide a name, valid email, and password between 8 and 72 UTF-8 bytes.",
+      code: "validation_error",
+      details,
     });
   }
 
@@ -52,11 +47,11 @@ router.post("/register", async (request, response, next) => {
     const passwordHash = await bcrypt.hash(password, passwordRounds);
     const result = database
       .prepare("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)")
-      .run(normalizedName, normalizedEmail, passwordHash);
+      .run(name, email, passwordHash);
     const user = {
       id: Number(result.lastInsertRowid),
-      name: normalizedName,
-      email: normalizedEmail,
+      name,
+      email,
       role: "user",
     };
 
@@ -68,30 +63,30 @@ router.post("/register", async (request, response, next) => {
     });
   } catch (error) {
     if (error.code === "SQLITE_CONSTRAINT_UNIQUE") {
-      return response.status(409).json({ error: "An account with that email already exists." });
+      throw conflict("An account with that email already exists.", { cause: error });
     }
     return next(error);
   }
 });
 
 router.post("/login", async (request, response, next) => {
-  const { email, password } = isObject(request.body) ? request.body : {};
-  const normalizedEmail = typeof email === "string" ? email.trim() : "";
+  const { email, password, details } = validateLogin(request.body);
 
-  if (
-    !isValidEmail(normalizedEmail) ||
-    !isValidPassword(password)
-  ) {
-    return response.status(400).json({ error: "Provide a valid email and password." });
+  if (details.length > 0) {
+    return response.status(400).json({
+      error: "Provide a valid email and password.",
+      code: "validation_error",
+      details,
+    });
   }
 
   try {
     const user = database
       .prepare("SELECT id, name, email, password_hash, role FROM users WHERE email = ?")
-      .get(normalizedEmail);
+      .get(email);
 
     if (!user?.password_hash || !(await bcrypt.compare(password, user.password_hash))) {
-      return response.status(401).json({ error: "Invalid email or password." });
+      throw unauthorized("Invalid email or password.");
     }
 
     return authenticationResponse(response, user);

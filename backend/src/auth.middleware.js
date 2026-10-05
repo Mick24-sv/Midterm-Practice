@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import database from "./database.js";
+import { unauthorized } from "./errors.js";
 
 export default function requireAuthentication(request, response, next) {
   const authorization = request.get("authorization");
@@ -8,7 +9,7 @@ export default function requireAuthentication(request, response, next) {
     : null;
 
   if (!match) {
-    return response.status(401).json({ error: "A valid Bearer token is required." });
+    throw unauthorized("A valid Bearer token is required.");
   }
 
   try {
@@ -19,7 +20,7 @@ export default function requireAuthentication(request, response, next) {
     });
 
     if (typeof claims === "string" || !/^\d+$/.test(claims.sub ?? "")) {
-      return response.status(401).json({ error: "Invalid or expired token." });
+      throw unauthorized("Invalid or expired token.", { code: "invalid_token" });
     }
 
     const user = database
@@ -27,15 +28,15 @@ export default function requireAuthentication(request, response, next) {
       .get(Number(claims.sub));
 
     if (!user) {
-      return response.status(401).json({ error: "Invalid or expired token." });
+      throw unauthorized("Invalid or expired token.", { code: "invalid_token" });
     }
 
     request.user = { id: user.id, role: user.role };
     return next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError) {
-      return response.status(401).json({ error: "Invalid or expired token." });
+      throw unauthorized("Invalid or expired token.", { code: "invalid_token", cause: error });
     }
-    return next(error);
+    throw error;
   }
 }

@@ -1,17 +1,13 @@
 import { Router } from "express";
 import database from "./database.js";
 import requireAuthentication from "./auth.middleware.js";
+import { validateRecord, validateSearchQuery } from "./input-validation.js";
 
 const router = Router();
 
 router.get("/", requireAuthentication, (request, response, next) => {
-  const query = request.query.q;
-  if (query !== undefined && (typeof query !== "string" || query.length > 200)) {
-    return response.status(400).json({ error: "Search query must be a string of at most 200 characters." });
-  }
-
   try {
-    const normalizedQuery = query?.trim();
+    const normalizedQuery = validateSearchQuery(request.query.q);
     const isAdmin = request.user.role === "admin";
     const records = normalizedQuery
       ? database
@@ -44,24 +40,13 @@ router.get("/", requireAuthentication, (request, response, next) => {
 });
 
 router.post("/", requireAuthentication, (request, response, next) => {
-  const body = request.body;
-  if (body === null || typeof body !== "object" || Array.isArray(body)) {
-    return response.status(400).json({ error: "A JSON object is required." });
-  }
+  const { title, description, status, details } = validateRecord(request.body);
 
-  const title = typeof body.title === "string" ? body.title.trim() : "";
-  const description = body.description === undefined ? "" : body.description;
-  const status = body.status === undefined ? "active" : body.status;
-
-  if (
-    title.length === 0 ||
-    title.length > 200 ||
-    typeof description !== "string" ||
-    description.length > 5000 ||
-    !["active", "archived"].includes(status)
-  ) {
+  if (details.length > 0) {
     return response.status(400).json({
       error: "Provide a title (1-200 characters), description (up to 5000 characters), and valid status.",
+      code: "validation_error",
+      details,
     });
   }
 
