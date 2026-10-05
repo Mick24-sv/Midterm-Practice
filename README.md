@@ -74,6 +74,30 @@ stack traces or database messages; they are logged server-side and returned as
 
 Run the error-handling checks with `npm test` from `backend/`.
 
+### Request Logging
+
+Every API request emits one structured line on completion, written to stdout:
+
+```
+[request] {"requestId":"...","method":"GET","path":"/api/records","status":200,"durationMs":1.42,"userId":1}
+```
+
+Each entry carries a `requestId`, the `method`, the path without its query
+string, the response `status`, and the `durationMs` in milliseconds. Authenticated
+requests also include `userId`, and requests closed by the client before a
+response was sent are marked `"aborted": true`. Lines with a `5xx` status go to
+stderr; everything else goes to stdout.
+
+The `requestId` comes from an inbound `X-Request-Id` header when it matches
+`[A-Za-z0-9._-]{1,64}`, otherwise a random UUID is generated. It is echoed back
+as the `X-Request-Id` response header so a client can match a failure report to
+its server log entry.
+
+Bodies, query strings, and headers are never logged, so passwords, JWTs, and
+search terms cannot leak into logs. Logged methods and paths are stripped of
+control characters to prevent forged log lines, and paths are truncated at 512
+characters. Set `LOG_REQUESTS=false` to disable request logging entirely.
+
 ### Records API
 
 Users can list only their own records; admins can list records owned by any

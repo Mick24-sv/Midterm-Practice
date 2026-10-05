@@ -17,6 +17,30 @@ const server = createServer(app);
 await new Promise((done) => server.listen(0, done));
 const base = `http://127.0.0.1:${server.address().port}`;
 
+// [SEC-07] Capture request logs instead of printing them, so the output stays readable.
+const logLines = [];
+const realConsoleLog = console.log;
+const realConsoleError = console.error;
+
+function capture(...parts) {
+  const line = parts.join(" ");
+  if (line.startsWith("[request] ") || line.startsWith("[error] ")) {
+    logLines.push(line);
+    return;
+  }
+
+  return realConsoleLog(line);
+}
+
+console.log = capture;
+console.error = capture;
+
+function requestLogs() {
+  return logLines
+    .filter((line) => line.startsWith("[request] "))
+    .map((line) => JSON.parse(line.slice("[request] ".length)));
+}
+
 let passed = 0;
 async function check(label, run) {
   await run();
@@ -341,6 +365,244 @@ await check("401 body has no token internals", async () => {
   assert.equal(result.status, 401);
   assert.equal(result.body.error, "Invalid or expired token.");
 });
+
+// [SEC-07] Request logging checks
+await check("logs method, path, status, and duration for each request", async () => {
+  logLines.length = 0;
+  await call("/api/health");
+  await new Promise((done) => setTimeout(done, 25));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 1, `expected exactly one log line, got ${JSON.stringify(entries)}`);
+  const [entry] = entries;
+  assert.equal(entry.method, "GET");
+  assert.equal(entry.path, "/api/health");
+  assert.equal(entry.status, 200);
+  assert.equal(typeof entry.durationMs, "number");
+  assert.ok(entry.durationMs >= 0);
+  assert.match(entry.requestId, /^[A-Za-z0-9._-]{1,64}$/);
+});
+
+await check("logs only one line per request on errors", async () => {
+  logLines.length = 0;
+  await call("/api/does-not-exist");
+  await new Promise((done) => setTimeout(done, 25));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].status, 404);
+  assert.equal(entries[0].path, "/api/does-not-exist");
+});
+
+await check("logs authenticated user id when available", async () => {
+  logLines.length = 0;
+  await call("/api/records", { headers: { authorization: `Bearer ${token}` } });
+  await new Promise((done) => setTimeout(done, 25));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].userId, 1);
+});
+
+await check("omits user id for anonymous requests", async () => {
+  logLines.length = 0;
+  await call("/api/records");
+  await new Promise((done) => setTimeout(done, 25));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 1);
+  assert.equal("userId" in entries[0], false);
+});
+
+await check("logs malformed JSON requests rejected by the body parser", async () => {
+  logLines.length = 0;
+  const response = await fetch(`${base}/api/auth/login`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{ not json",
+  });
+  await response.json();
+  await new Promise((done) => setTimeout(done, 25));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].status, 400);
+});
+
+await check("never logs credentials, tokens, or query strings", async () => {
+  logLines.length = 0;
+  await call("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email: "ada@example.com", password: "super-secret-password" }),
+  });
+  await call(`/api/records?q=${"topsecret".repeat(10)}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  await new Promise((done) => setTimeout(done, 25));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 2);
+  const logged = JSON.stringify(entries);
+  for (const secret of [
+    "super-secret-password",
+    "topsecret",
+    token,
+    "Authorization",
+    "authorization",
+    "Bearer",
+  ]) {
+    assert.ok(!logged.includes(secret), `request logs must not contain ${secret}`);
+  }
+  assert.equal(entries[1].path, "/api/records");
+});
+
+await check("honors a client request id and echoes it in the response header", async () => {
+  logLines.length = 0;
+  const response = await fetch(`${base}/api/health`, {
+    headers: { "x-request-id": "client-supplied-id.1" },
+  });
+  await response.json();
+  await new Promise((done) => setTimeout(done, 25));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].requestId, "client-supplied-id.1");
+  assert.equal(response.headers.get("x-request-id"), "client-supplied-id.1");
+});
+
+await check("replaces an unusable request id", async () => {
+  logLines.length = 0;
+  const response = await fetch(`${base}/api/health`, {
+    headers: { "x-request-id": "bad id with spaces and injection" },
+  });
+  await response.json();
+  await new Promise((done) => setTimeout(done, 25));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 1);
+  assert.notEqual(entries[0].requestId, "bad id with spaces and injection");
+  assert.match(entries[0].requestId, /^[A-Za-z0-9._-]{1,64}$/);
+  assert.equal(response.headers.get("x-request-id"), entries[0].requestId);
+});
+
+await check("replaces an over-long request id", async () => {
+  logLines.length = 0;
+  const response = await fetch(`${base}/api/health`, {
+    headers: { "x-request-id": "x".repeat(200) },
+  });
+  await response.json();
+  await new Promise((done) => setTimeout(done, 25));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 1);
+  assert.ok(entries[0].requestId.length <= 64);
+  assert.match(entries[0].requestId, /^[A-Za-z0-9._-]{1,64}$/);
+});
+
+await check("truncates very long paths", async () => {
+  logLines.length = 0;
+  const { default: express } = await import("express");
+  const { default: buildRequestLogger } = await import("../src/request-logger.js");
+  const deep = express();
+  deep.use(buildRequestLogger());
+  deep.get(/.*/, (_request, response) => response.json({ ok: true }));
+
+  const deepServer = createServer(deep);
+  await new Promise((done) => deepServer.listen(0, done));
+
+  const longPath = `/${"segment-".repeat(200)}`;
+  await (await fetch(`http://127.0.0.1:${deepServer.address().port}${longPath}`)).json();
+  await new Promise((done) => setTimeout(done, 25));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].path.length, 515, "long paths must be truncated");
+  await new Promise((done) => deepServer.close(done));
+});
+
+await check("sanitizes control characters in log fields", async () => {
+  const { default: buildRequestLogger } = await import("../src/request-logger.js");
+  const written = [];
+  const originalLog = console.log;
+  console.log = (line) => written.push(line);
+
+  const handlers = {};
+  const request = {
+    method: "GET\r\nX-Injected: yes",
+    originalUrl: "/api/records\n[fake] 200 ok",
+    get: (name) => (name === "x-request-id" ? "sanitize.check-1" : undefined),
+  };
+  const response = {
+    statusCode: 200,
+    writableFinished: false,
+    setHeader: () => {},
+    on(event, handler) {
+      handlers[event] = handler;
+    },
+  };
+
+  buildRequestLogger()(request, response, () => {});
+  handlers.finish();
+  console.log = originalLog;
+
+  assert.equal(written.length, 1);
+  const entry = JSON.parse(written[0].slice("[request] ".length));
+  assert.equal(entry.requestId, "sanitize.check-1");
+  assert.equal(entry.method, "GETX-Injected: y...");
+  assert.equal(entry.path, "/api/records[fake] 200 ok");
+  assert.ok(!/[\r\n]/.test(written[0]), "log line must not contain newlines");
+});
+
+await check("logs aborted requests without crashing", async () => {
+  logLines.length = 0;
+  const { default: express } = await import("express");
+  const { default: buildRequestLogger } = await import("../src/request-logger.js");
+  const slow = express();
+  slow.use(buildRequestLogger());
+  slow.get("/slow", async (_request, response) => {
+    await new Promise((done) => setTimeout(done, 500));
+    response.json({ ok: true });
+  });
+
+  const slowServer = createServer(slow);
+  await new Promise((done) => slowServer.listen(0, done));
+
+  const controller = new AbortController();
+  const pending = fetch(`http://127.0.0.1:${slowServer.address().port}/slow`, {
+    signal: controller.signal,
+  });
+  await new Promise((done) => setTimeout(done, 50));
+  controller.abort();
+  await assert.rejects(() => pending);
+  await new Promise((done) => setTimeout(done, 50));
+
+  const entries = requestLogs();
+  assert.equal(entries.length, 1, "aborted requests must still be logged exactly once");
+  assert.equal(entries[0].aborted, true);
+  await new Promise((done) => slowServer.close(done));
+});
+
+await check("logging can be disabled with LOG_REQUESTS=false", async () => {
+  logLines.length = 0;
+  const { default: express } = await import("express");
+  const { default: buildRequestLogger } = await import("../src/request-logger.js");
+  const quiet = express();
+  quiet.use(buildRequestLogger({ enabled: false }));
+  quiet.get("/quiet", (_request, response) => response.json({ ok: true }));
+
+  const quietServer = createServer(quiet);
+  await new Promise((done) => quietServer.listen(0, done));
+  const response = await fetch(`http://127.0.0.1:${quietServer.address().port}/quiet`);
+  await response.json();
+  await new Promise((done) => setTimeout(done, 25));
+
+  assert.equal(requestLogs().length, 0);
+  assert.equal(response.headers.get("x-request-id"), null);
+  await new Promise((done) => quietServer.close(done));
+});
+
+console.log = realConsoleLog;
+console.error = realConsoleError;
 
 await new Promise((done) => server.close(done));
 

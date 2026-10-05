@@ -4,9 +4,12 @@ import authRoutes from "./auth.routes.js";
 import recordRoutes from "./records.routes.js";
 import { notFoundHandler, errorHandler } from "./error.middleware.js";
 import { serviceUnavailable } from "./errors.js";
+import requestLogger from "./request-logger.js";
 
 const app = express();
 
+// Mounted before the body parser so malformed and oversized payloads are logged too.
+app.use(requestLogger());
 app.use(express.json({ limit: "32kb" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/records", recordRoutes);
