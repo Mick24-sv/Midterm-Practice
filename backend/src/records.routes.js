@@ -123,4 +123,33 @@ router.patch("/:id", requireAuthentication, (request, response, next) => {
   }
 });
 
+// [SEC-06] Delete Record API
+router.delete("/:id", requireAuthentication, (request, response, next) => {
+  try {
+    const recordId = validateRecordId(request.params.id);
+    const isAdmin = request.user.role === "admin";
+
+    const existing = database
+      .prepare(`SELECT ${recordColumns} FROM records WHERE id = ?`)
+      .get(recordId);
+
+    if (!existing) {
+      throw notFound("Record not found.");
+    }
+
+    if (!isAdmin && existing.owner_id !== request.user.id) {
+      throw forbidden("You can only delete your own records.");
+    }
+
+    database
+      .prepare("DELETE FROM records WHERE id = ?")
+      .run(recordId);
+
+    return response.status(204).send();
+  } catch (error) {
+    return next(error);
+  }
+});
+
 export default router;
+
