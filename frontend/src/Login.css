@@ -1,0 +1,146 @@
+/* INT-01 — Login form + dashboard shell styles */
+
+/* ── Login page ─────────────────────────────────────────────────── */
+.login-page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px 36px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.login-card h1 {
+  font-size: 1.6rem;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.login-card .subtitle {
+  color: var(--text-muted, #888);
+  font-size: 0.9rem;
+  text-align: center;
+  margin: 0 0 28px;
+}
+
+/* ── Form fields ────────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.field input {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input-bg, #12121f);
+  color: var(--text-h);
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.field input[aria-invalid='true'] {
+  border-color: #e55;
+}
+
+.field-error {
+  font-size: 0.78rem;
+  color: #e55;
+}
+
+/* ── Submit button ──────────────────────────────────────────────── */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-top: 8px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── General error banner ───────────────────────────────────────── */
+.error-banner {
+  background: rgba(220, 50, 50, 0.15);
+  border: 1px solid rgba(220, 50, 50, 0.5);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  color: #f88;
+  margin-bottom: 18px;
+}
+
+/* ── Dashboard stub ─────────────────────────────────────────────── */
+.dashboard {
+  min-height: 100dvh;
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.dashboard h1 {
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.dashboard p {
+  color: var(--text-muted, #888);
+  margin: 0;
+}
+
+.btn-secondary {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-h);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: var(--social-bg);
+}
+
