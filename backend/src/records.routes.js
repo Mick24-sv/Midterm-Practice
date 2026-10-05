@@ -2,7 +2,7 @@ import { Router } from "express";
 import database from "./database.js";
 import requireAuthentication from "./auth.middleware.js";
 import { validateRecord, validateRecordId, validateRecordUpdate, validateSearchQuery } from "./input-validation.js";
-import { badRequest, forbidden, notFound } from "./errors.js";
+import { forbidden, notFound } from "./errors.js";
 
 const router = Router();
 
@@ -118,6 +118,28 @@ router.patch("/:id", requireAuthentication, (request, response, next) => {
       .get(recordId);
 
     return response.json({ record });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete("/:id", requireAuthentication, (request, response, next) => {
+  try {
+    const recordId = validateRecordId(request.params.id);
+    const existing = database
+      .prepare("SELECT id, owner_id FROM records WHERE id = ?")
+      .get(recordId);
+
+    if (!existing) {
+      throw notFound("Record not found.");
+    }
+
+    if (request.user.role !== "admin" && existing.owner_id !== request.user.id) {
+      throw forbidden("You can only delete your own records.");
+    }
+
+    database.prepare("DELETE FROM records WHERE id = ?").run(recordId);
+    return response.status(204).end();
   } catch (error) {
     return next(error);
   }

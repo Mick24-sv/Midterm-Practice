@@ -58,6 +58,10 @@ async function call(path, options = {}) {
 }
 
 let token;
+let bobToken;
+let bobRecordId;
+let bobAdminRecordId;
+let adminToken;
 
 await check("404 for unknown endpoint", async () => {
   const result = await call("/api/does-not-exist");
@@ -286,15 +290,81 @@ await check("403 updating another user's record", async () => {
     method: "POST",
     body: JSON.stringify({ name: "Bob", email: "bob@example.com", password: "another-pass-1" }),
   });
-  const otherToken = created.body.token;
+  bobToken = created.body.token;
+
+  const bobRecord = await call("/api/records", {
+    method: "POST",
+    headers: { authorization: `Bearer ${bobToken}` },
+    body: JSON.stringify({ title: "Bob's record" }),
+  });
+  bobRecordId = bobRecord.body.record.id;
 
   const result = await call("/api/records/1", {
     method: "PATCH",
-    headers: { authorization: `Bearer ${otherToken}` },
+    headers: { authorization: `Bearer ${bobToken}` },
     body: JSON.stringify({ title: "Hijacked" }),
   });
   assert.equal(result.status, 403);
   assert.equal(result.body.code, "forbidden");
+});
+
+await check("role-based record visibility", async () => {
+  const userRecords = await call("/api/records", {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  assert.deepEqual(userRecords.body.records.map((record) => record.id), [1]);
+
+  const bobRecords = await call("/api/records", {
+    headers: { authorization: `Bearer ${bobToken}` },
+  });
+  assert.deepEqual(bobRecords.body.records.map((record) => record.id), [bobRecordId]);
+});
+
+await check("401 for deleting without authentication", async () => {
+  const result = await call("/api/records/1", { method: "DELETE" });
+  assert.equal(result.status, 401);
+  assert.equal(result.body.code, "unauthorized");
+});
+
+await check("400 for invalid record id on delete", async () => {
+  const result = await call("/api/records/abc", {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  assert.equal(result.status, 400);
+  assert.equal(result.body.details[0].field, "id");
+});
+
+await check("404 for missing record on delete", async () => {
+  const result = await call("/api/records/999999", {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  assert.equal(result.status, 404);
+  assert.equal(result.body.code, "not_found");
+});
+
+await check("403 when a user attempts to delete another user's record", async () => {
+  const result = await call("/api/records/1", {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${bobToken}` },
+  });
+  assert.equal(result.status, 403);
+  assert.equal(result.body.code, "forbidden");
+});
+
+await check("user can delete their own record", async () => {
+  const result = await call(`/api/records/${bobRecordId}`, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${bobToken}` },
+  });
+  assert.equal(result.status, 204);
+  assert.equal(result.body, undefined);
+
+  const remaining = await call("/api/records", {
+    headers: { authorization: `Bearer ${bobToken}` },
+  });
+  assert.deepEqual(remaining.body.records, []);
 });
 
 await check("admin can update another user's record", async () => {
@@ -302,7 +372,7 @@ await check("admin can update another user's record", async () => {
     method: "POST",
     body: JSON.stringify({ name: "Root", email: "root@example.com", password: "admin-pass-1" }),
   });
-  const adminToken = admin.body.token;
+  adminToken = admin.body.token;
 
   const { default: database } = await import("../src/database.js");
   database
@@ -317,6 +387,33 @@ await check("admin can update another user's record", async () => {
   assert.equal(result.status, 200);
   assert.equal(result.body.record.description, "Admin edit");
   assert.equal(result.body.record.title, "Renamed", "admin partial update must not clear fields");
+});
+
+await check("admin can view all records", async () => {
+  const created = await call("/api/records", {
+    method: "POST",
+    headers: { authorization: `Bearer ${bobToken}` },
+    body: JSON.stringify({ title: "Record visible to admin" }),
+  });
+  bobAdminRecordId = created.body.record.id;
+
+  const result = await call("/api/records", {
+    headers: { authorization: `Bearer ${adminToken}` },
+  });
+  assert.deepEqual(result.body.records.map((record) => record.id), [bobAdminRecordId, 1]);
+});
+
+await check("admin can delete another user's record", async () => {
+  const result = await call(`/api/records/${bobAdminRecordId}`, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${adminToken}` },
+  });
+  assert.equal(result.status, 204);
+
+  const remaining = await call("/api/records", {
+    headers: { authorization: `Bearer ${adminToken}` },
+  });
+  assert.deepEqual(remaining.body.records.map((record) => record.id), [1]);
 });
 
 await check("update bumps updated_at", async () => {
