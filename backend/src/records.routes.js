@@ -1,7 +1,8 @@
 import { Router } from "express";
 import database from "./database.js";
 import requireAuthentication from "./auth.middleware.js";
-import { validateRecord, validateSearchQuery } from "./input-validation.js";
+import { validateRecord, validateRecordId, validateRecordUpdate, validateSearchQuery } from "./input-validation.js";
+import { badRequest, forbidden, notFound } from "./errors.js";
 
 const router = Router();
 
@@ -65,6 +66,58 @@ router.post("/", requireAuthentication, (request, response, next) => {
       .get(result.lastInsertRowid);
 
     return response.status(201).json({ record });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+const recordColumns =
+  "id, title, description, status, owner_id, created_at, updated_at";
+
+router.patch("/:id", requireAuthentication, (request, response, next) => {
+  try {
+    const recordId = validateRecordId(request.params.id);
+    const { fields, details } = validateRecordUpdate(request.body);
+
+    if (details.length > 0) {
+      return response.status(400).json({
+        error: "Provide at least one of title, description, or status with valid values.",
+        code: "validation_error",
+        details,
+      });
+    }
+
+    const isAdmin = request.user.role === "admin";
+    const existing = database
+      .prepare(`SELECT ${recordColumns} FROM records WHERE id = ?`)
+      .get(recordId);
+
+    if (!existing) {
+      throw notFound("Record not found.");
+    }
+
+    if (!isAdmin && existing.owner_id !== request.user.id) {
+      throw forbidden("You can only update your own records.");
+    }
+
+    const assignments = fields.map((field) => `${field.column} = ?`).join(", ");
+    const result = database
+      .prepare(
+        `UPDATE records
+         SET ${assignments}, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+      )
+      .run(...fields.map((field) => field.value), recordId);
+
+    if (result.changes === 0) {
+      throw notFound("Record not found.");
+    }
+
+    const record = database
+      .prepare(`SELECT ${recordColumns} FROM records WHERE id = ?`)
+      .get(recordId);
+
+    return response.json({ record });
   } catch (error) {
     return next(error);
   }

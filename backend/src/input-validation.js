@@ -117,3 +117,56 @@ export function validateRecord(body) {
 
   return { title, description, status, details };
 }
+
+export function validateRecordId(rawId) {
+  if (typeof rawId !== "string" || !/^\d{1,15}$/.test(rawId)) {
+    throw badRequest("Record id must be a positive integer.", {
+      code: "validation_error",
+      details: [issue("id", "Record id must be a positive integer.")],
+    });
+  }
+
+  return Number(rawId);
+}
+
+export function validateRecordUpdate(body) {
+  if (!isObject(body)) {
+    throw badRequest("A JSON object is required.", {
+      code: "invalid_body",
+      details: [issue("body", "A JSON object is required.")],
+    });
+  }
+
+  const details = [];
+  const fields = [];
+
+  if (body.title !== undefined) {
+    if (!isNonEmptyString(body.title) || body.title.trim().length > 200 || CONTROL_CHARACTERS.test(body.title)) {
+      details.push(issue("title", "Title must be 1-200 characters and contain no control characters."));
+    } else {
+      fields.push({ column: "title", value: body.title.trim() });
+    }
+  }
+
+  if (body.description !== undefined) {
+    if (typeof body.description !== "string" || body.description.length > 5000) {
+      details.push(issue("description", "Description must be a string of at most 5000 characters."));
+    } else {
+      fields.push({ column: "description", value: body.description });
+    }
+  }
+
+  if (body.status !== undefined) {
+    if (body.status !== "active" && body.status !== "archived") {
+      details.push(issue("status", "Status must be either active or archived."));
+    } else {
+      fields.push({ column: "status", value: body.status });
+    }
+  }
+
+  if (fields.length === 0 && details.length === 0) {
+    details.push(issue("body", "Provide at least one of title, description, or status."));
+  }
+
+  return { fields, details };
+}

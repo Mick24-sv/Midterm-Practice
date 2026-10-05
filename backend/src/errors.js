@@ -27,6 +27,10 @@ export function unauthorized(message, options) {
   return new HttpError(401, message, options);
 }
 
+export function forbidden(message, options) {
+  return new HttpError(403, message, options);
+}
+
 export function notFound(message, options) {
   return new HttpError(404, message, options);
 }

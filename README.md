@@ -82,3 +82,17 @@ user. New records are always owned by the authenticated account.
 - `GET /api/records` requires `Authorization: Bearer <token>` and returns `{ "records": [...] }` containing only records owned by the authenticated user, newest first. An optional `q` parameter searches titles and descriptions (case-insensitive substring match), for example `/api/records?q=project`. `%` and `_` are treated as literal characters. The query must be at most 200 characters. An account with no matches receives an empty array. Missing or invalid tokens return `401`; invalid query parameters return `400`.
 - `POST /api/records` requires `Authorization: Bearer <token>` and accepts `{ "title": "Example record", "description": "Details", "status": "active" }`. The title is required (up to 200 characters); description is optional (up to 5000 characters); status defaults to `active` and may be `active` or `archived`.
 - It returns `201` with the created record. Ownership is taken from the authenticated account, not the request body. Missing or invalid tokens return `401`; invalid fields return `400`.
+
+### Update Record API
+
+- `PATCH /api/records/:id` requires `Authorization: Bearer <token>` and accepts any
+  subset of `{ "title": "Renamed", "description": "New details", "status": "archived" }`.
+  The id must be a positive integer. At least one updatable field is required.
+- It returns `200` with the full updated record. Only the supplied fields change;
+  omitted fields keep their stored values. `updated_at` is set to the current
+  timestamp on every successful update, while `created_at` and `owner_id` never
+  change. Owners cannot reassign ownership or alter `owner_id`.
+- Owners may update their own records. Admins may update any record. Updating
+  another user's record returns `403 forbidden`, an unknown id returns `404`, a
+  malformed id or invalid fields return `400` with `details`, and a missing or
+  invalid token returns `401`.

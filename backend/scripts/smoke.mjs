@@ -192,6 +192,123 @@ await check("400 for oversized search query", async () => {
   assert.equal(result.body.code, "validation_error");
 });
 
+await check("400 for non-numeric record id on update", async () => {
+  const result = await call("/api/records/abc", {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify({ title: "New" }),
+  });
+  assert.equal(result.status, 400);
+  assert.equal(result.body.code, "validation_error");
+  assert.equal(result.body.details[0].field, "id");
+});
+
+await check("404 for missing record on update", async () => {
+  const result = await call("/api/records/999999", {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify({ title: "New" }),
+  });
+  assert.equal(result.status, 404);
+  assert.equal(result.body.code, "not_found");
+});
+
+await check("400 for empty update body", async () => {
+  const result = await call("/api/records/1", {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify({}),
+  });
+  assert.equal(result.status, 400);
+  assert.equal(result.body.details[0].field, "body");
+});
+
+await check("400 with details for invalid partial update", async () => {
+  const result = await call("/api/records/1", {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify({ title: "   ", description: 5, status: "nope" }),
+  });
+  assert.equal(result.status, 400);
+  assert.deepEqual(
+    result.body.details.map((entry) => entry.field).sort(),
+    ["description", "status", "title"],
+  );
+});
+
+await check("401 for update without token", async () => {
+  const result = await call("/api/records/1", {
+    method: "PATCH",
+    body: JSON.stringify({ title: "New" }),
+  });
+  assert.equal(result.status, 401);
+});
+
+await check("200 update applies partial fields", async () => {
+  const result = await call("/api/records/1", {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify({ title: "Renamed", status: "archived" }),
+  });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.record.title, "Renamed");
+  assert.equal(result.body.record.status, "archived");
+  assert.equal(result.body.record.description, "Details", "untouched fields must persist");
+  assert.equal(result.body.record.owner_id, 1, "ownership must not change");
+});
+
+await check("403 updating another user's record", async () => {
+  const created = await call("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ name: "Bob", email: "bob@example.com", password: "another-pass-1" }),
+  });
+  const otherToken = created.body.token;
+
+  const result = await call("/api/records/1", {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${otherToken}` },
+    body: JSON.stringify({ title: "Hijacked" }),
+  });
+  assert.equal(result.status, 403);
+  assert.equal(result.body.code, "forbidden");
+});
+
+await check("admin can update another user's record", async () => {
+  const admin = await call("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ name: "Root", email: "root@example.com", password: "admin-pass-1" }),
+  });
+  const adminToken = admin.body.token;
+
+  const { default: database } = await import("../src/database.js");
+  database
+    .prepare("UPDATE users SET role = 'admin' WHERE email = ?")
+    .run("root@example.com");
+
+  const result = await call("/api/records/1", {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ description: "Admin edit" }),
+  });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.record.description, "Admin edit");
+  assert.equal(result.body.record.title, "Renamed", "admin partial update must not clear fields");
+});
+
+await check("update bumps updated_at", async () => {
+  const before = await call("/api/records", { headers: { authorization: `Bearer ${token}` } });
+  await new Promise((done) => setTimeout(done, 1100));
+  await call("/api/records/1", {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify({ title: "Touched" }),
+  });
+  const after = await call("/api/records", { headers: { authorization: `Bearer ${token}` } });
+
+  assert.notEqual(before.body.records[0].updated_at, after.body.records[0].updated_at);
+  assert.equal(after.body.records[0].created_at, before.body.records[0].created_at);
+});
+
 await check("200 health", async () => {
   const result = await call("/api/health");
   assert.equal(result.status, 200);
