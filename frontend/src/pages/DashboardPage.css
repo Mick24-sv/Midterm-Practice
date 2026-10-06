@@ -1,0 +1,298 @@
+/* ── Dashboard Layout ───────────────────────────────────────── */
+.dashboard {
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.dashboard__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dashboard__title {
+  margin: 0 0 6px 0;
+  font-size: 32px;
+  line-height: 1.2;
+}
+
+.dashboard__subtitle {
+  color: var(--text);
+  font-size: 15px;
+  margin: 0;
+}
+
+.dashboard__date {
+  font-size: 14px;
+  color: var(--text);
+  margin: 0;
+  padding: 6px 12px;
+  background: var(--code-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+/* ── Stat Grid & Cards ──────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-card__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.stat-card__icon {
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+}
+
+.stat-card__value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-h);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.stat-card__change {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+}
+
+.stat-card__change--up {
+  color: #16a34a;
+}
+
+.stat-card__change--down {
+  color: #dc2626;
+}
+
+.stat-card__change--neutral {
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  .stat-card__change--up {
+    color: #4ade80;
+  }
+  .stat-card__change--down {
+    color: #f87171;
+  }
+}
+
+/* ── Bottom Section (Activity + Actions) ────────────────────── */
+.dashboard__bottom {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .dashboard__bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+.activity-card,
+.quick-actions-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.card-action-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.card-action-btn:hover {
+  background: var(--accent-bg);
+}
+
+/* ── Activity Table ─────────────────────────────────────────── */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.activity-table th {
+  padding: 10px 14px;
+  color: var(--text);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.activity-table td {
+  padding: 12px 14px;
+  color: var(--text-h);
+  border-bottom: 1px solid var(--border);
+}
+
+.activity-table tr:last-child td {
+  border-bottom: none;
+}
+
+.activity-table__id {
+  color: var(--text);
+  width: 32px;
+}
+
+.activity-table__date {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* ── Status Badges ──────────────────────────────────────────── */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge--completed {
+  background: rgba(22, 163, 74, 0.12);
+  color: #16a34a;
+}
+
+.status-badge--pending {
+  background: rgba(234, 179, 8, 0.15);
+  color: #b45309;
+}
+
+.status-badge--failed {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+
+@media (prefers-color-scheme: dark) {
+  .status-badge--completed {
+    background: rgba(74, 222, 128, 0.15);
+    color: #4ade80;
+  }
+  .status-badge--pending {
+    background: rgba(250, 204, 21, 0.15);
+    color: #facc15;
+  }
+  .status-badge--failed {
+    background: rgba(248, 113, 113, 0.15);
+    color: #f87171;
+  }
+}
+
+/* ── Quick Actions ──────────────────────────────────────────── */
+.quick-actions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quick-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-h);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.quick-action-btn:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.quick-action-btn__icon {
+  font-size: 18px;
+}
+
+.quick-action-btn__arrow {
+  margin-left: auto;
+  opacity: 0.5;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.quick-action-btn:hover .quick-action-btn__arrow {
+  transform: translateX(4px);
+  opacity: 1;
+}
