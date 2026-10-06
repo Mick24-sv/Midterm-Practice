@@ -132,6 +132,47 @@ async function toApiError(response: Response): Promise<ApiError> {
   )
 }
 
+export interface ApiRecord {
+  id: number
+  title: string
+  description: string
+  status: 'active' | 'archived'
+  owner_id: number
+  created_at: string
+  updated_at: string
+}
+
+export async function createRecord(
+  token: string,
+  data: { title: string; description: string; status: 'active' | 'archived' },
+): Promise<ApiRecord> {
+  let response: Response
+  try {
+    response = await fetch(`${apiBaseUrl}/records`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    })
+  } catch {
+    throw new ApiError(
+      'Could not reach the records API. Check that the backend is running.',
+      0,
+      'network_error',
+    )
+  }
+
+  if (!response.ok) {
+    throw await toApiError(response)
+  }
+
+  const payload = await response.json() as { record: ApiRecord }
+  return payload.record
+}
+
 // INT-02 — Registration API call
 export async function register(credentials: {
   name: string

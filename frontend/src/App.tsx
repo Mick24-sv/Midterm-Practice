@@ -2,111 +2,146 @@
 // INT-02 — Registration form wired to backend registration API.
 
 import { useState } from 'react'
-import LoginForm from './LoginForm'
-import RegistrationForm from './RegistrationForm'
-import { clearStoredSession, getSessionExpiry, readStoredSession, storeSession } from './session'
-import type { AuthSession } from './api'
+import Navbar from './components/Navbar'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import DashboardPage from './pages/DashboardPage'
+import ViewRecordsTable, { type ViewRecord } from './pages/ViewRecordsTable'
 import './App.css'
 
+type Page     = 'Home' | 'Dashboard' | 'Records'
 type AuthView = 'login' | 'register'
 
 export default function App() {
-  const [session, setSession] = useState<AuthSession | null>(() => readStoredSession())
-  const [view, setView] = useState<AuthView>('login')
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [authView, setAuthView]     = useState<AuthView>('login')
+  const [activePage, setActivePage] = useState<Page>('Home')
+  const [recordSearch, setRecordSearch] = useState('')
 
-  function handleAuthenticated(nextSession: AuthSession) {
-    storeSession(nextSession)
-    setSession(nextSession)
+  // ── Auth screens ───────────────────────────────────────────
+  if (!isLoggedIn) {
+    if (authView === 'register') {
+      return (
+        <RegisterPage
+          onRegister={() => setAuthView('login')}
+          onGoToLogin={() => setAuthView('login')}
+        />
+      )
+    }
+    return (
+      <LoginPage
+        onLogin={() => setIsLoggedIn(true)}
+        onGoToRegister={() => setAuthView('register')}
+      />
+    )
   }
 
-  function handleSignOut() {
-    clearStoredSession()
-    setSession(null)
-    setView('login')
-  }
+  // ── Sample Records Data ────────────────────────────────────
+  const sampleRecords: ViewRecord[] = [
+    { id: 'REC-1001', title: 'Q3 Financial Audit', category: 'Finance', updated: '2 hours ago', status: 'Completed' },
+    { id: 'REC-1002', title: 'Employee Onboarding Docs', category: 'HR', updated: 'Yesterday', status: 'Completed' },
+    { id: 'REC-1003', title: 'Server Migration Plan', category: 'IT', updated: '3 days ago', status: 'Pending' },
+    { id: 'REC-1004', title: 'Vendor Contract Review', category: 'Legal', updated: 'Last week', status: 'Completed' },
+  ]
 
-  const expiry = session === null ? null : getSessionExpiry(session)
-
+  // ── Main App Layout ────────────────────────────────────────
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Mini Management System</h1>
-        <p>
-          {session === null
-            ? view === 'login'
-              ? 'Sign in to reach the records workspace.'
-              : 'Create an account to get started.'
-            : 'You are signed in.'}
-        </p>
-      </header>
+    <>
+      <Navbar
+        activePage={activePage}
+        onNavigate={setActivePage}
+        onLogout={() => {
+          setIsLoggedIn(false)
+          setAuthView('login')
+        }}
+      />
 
-      {/* ── Unauthenticated ── */}
-      {session === null && (
-        <main className="auth-card">
-          {view === 'login' ? (
-            <>
-              <h2>Sign in</h2>
-              <p className="auth-intro">Use the email and password of a registered account.</p>
-              <LoginForm onAuthenticated={handleAuthenticated} />
-              <p className="auth-switch">
-                Don't have an account?{' '}
+      <main>
+        {/* ── HOME TAB ────────────────────────────────────────── */}
+        {activePage === 'Home' && (
+          <section id="home" className="page-section">
+            <div className="hero-banner">
+              <h1>Mini Management System</h1>
+              <p>
+                A clean, responsive prototype platform designed for agile teams to manage system
+                operations, view live analytics, and organize team records seamlessly across any device.
+              </p>
+              <div>
                 <button
                   type="button"
-                  className="auth-link"
-                  onClick={() => setView('register')}
+                  className="records-btn"
+                  onClick={() => setActivePage('Dashboard')}
                 >
-                  Create one
+                  Go to Dashboard →
                 </button>
-              </p>
-            </>
-          ) : (
-            <>
-              <h2>Create account</h2>
-              <p className="auth-intro">Fill in the details below to register.</p>
-              <RegistrationForm onAuthenticated={handleAuthenticated} />
-              <p className="auth-switch">
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  className="auth-link"
-                  onClick={() => setView('login')}
-                >
-                  Sign in
-                </button>
-              </p>
-            </>
-          )}
-        </main>
-      )}
+              </div>
+            </div>
 
-      {/* ── Authenticated ── */}
-      {session !== null && (
-        <main className="auth-card">
-          <h2>Signed in</h2>
-          <p className="auth-intro">Your Bearer token is stored for this browser tab.</p>
-          <dl className="session-details">
-            <div>
-              <dt>Name</dt>
-              <dd>{session.user.name}</dd>
+            <div className="section-header">
+              <h2>Key System Highlights</h2>
+              <p className="section-subtitle">
+                Built with responsiveness and accessibility in mind.
+              </p>
             </div>
-            <div>
-              <dt>Email</dt>
-              <dd>{session.user.email}</dd>
+
+            <div className="features-grid">
+              <div className="feature-card">
+                <span className="feature-card__icon" aria-hidden="true">📊</span>
+                <h3 className="feature-card__title">Real-Time Metrics</h3>
+                <p className="feature-card__desc">
+                  Monitor active users, data operations, and task status cards with responsive grid layouts.
+                </p>
+              </div>
+
+              <div className="feature-card">
+                <span className="feature-card__icon" aria-hidden="true">📱</span>
+                <h3 className="feature-card__title">Mobile-First UI</h3>
+                <p className="feature-card__desc">
+                  Seamlessly adapts from small mobile screens (320px) up to ultra-wide desktop monitors.
+                </p>
+              </div>
+
+              <div className="feature-card">
+                <span className="feature-card__icon" aria-hidden="true">🔒</span>
+                <h3 className="feature-card__title">Secure Access</h3>
+                <p className="feature-card__desc">
+                  Includes full login and registration workflows with password strength validation and session controls.
+                </p>
+              </div>
             </div>
-            <div>
-              <dt>Role</dt>
-              <dd>{session.user.role}</dd>
+          </section>
+        )}
+
+        {/* ── DASHBOARD TAB ───────────────────────────────────── */}
+        {activePage === 'Dashboard' && <DashboardPage />}
+
+        {/* ── RECORDS TAB ─────────────────────────────────────── */}
+        {activePage === 'Records' && (
+          <section id="records" className="page-section">
+            <div className="section-header">
+              <h1>Records Management</h1>
+              <p className="section-subtitle">
+                View, search, and manage system documentation and data entries.
+              </p>
             </div>
-            <div>
-              <dt>Token expires</dt>
-              <dd>{expiry === null ? 'unknown' : expiry.toLocaleTimeString()}</dd>
+
+            <div className="records-toolbar">
+              <input
+                type="search"
+                className="records-search"
+                placeholder="Search by ID, title, or category..."
+                value={recordSearch}
+                onChange={(e) => setRecordSearch(e.target.value)}
+              />
+              <button type="button" className="records-btn">
+                <span>+ Add Record</span>
+              </button>
             </div>
-          </dl>
-          <button type="button" className="auth-submit" onClick={handleSignOut}>
-            Sign out
-          </button>
-        </main>
-      )}
-    </div>
+
+            <ViewRecordsTable records={sampleRecords} searchQuery={recordSearch} />
+          </section>
+        )}
+      </main>
+    </>
   )
 }
