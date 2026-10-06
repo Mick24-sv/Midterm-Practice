@@ -12,9 +12,10 @@ type NavLabel = typeof NAV_LINKS[number]['label']
 interface NavbarProps {
   activePage: NavLabel
   onNavigate: (page: NavLabel) => void
+  onLogout: () => void
 }
 
-export default function Navbar({ activePage, onNavigate }: NavbarProps) {
+export default function Navbar({ activePage, onNavigate, onLogout }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -56,6 +57,24 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
             </button>
           </li>
         ))}
+
+        {/* Logout — sits at the end of the link list */}
+        <li className="navbar__item navbar__item--logout">
+          <button
+            className="navbar__logout"
+            onClick={() => {
+              setMenuOpen(false)
+              onLogout()
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Logout
+          </button>
+        </li>
       </ul>
     </nav>
   )
