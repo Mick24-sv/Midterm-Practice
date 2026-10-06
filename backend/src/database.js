@@ -18,6 +18,19 @@ database.pragma("journal_mode = WAL");
 database.exec(readFileSync(new URL("./schema.sql", import.meta.url), "utf8"));
 
 const userColumns = database.pragma("table_info(users)");
+if (!userColumns.some((column) => column.name === "username")) {
+  database.exec(
+    "ALTER TABLE users ADD COLUMN username TEXT",
+  );
+
+  database.exec(
+    "UPDATE users SET username = lower(substr(email, 1, instr(email, '@') - 1)) WHERE username IS NULL OR trim(username) = ''",
+  );
+
+  database.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_unique ON users(username COLLATE NOCASE)",
+  );
+}
 if (!userColumns.some((column) => column.name === "password_hash")) {
   database.exec("ALTER TABLE users ADD COLUMN password_hash TEXT");
 }

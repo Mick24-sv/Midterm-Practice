@@ -21,6 +21,10 @@ export function isValidPassword(password) {
   return length >= 8 && length <= 72;
 }
 
+export function isValidUsername(username) {
+  return typeof username === "string" && /^[a-zA-Z0-9._-]{3,32}$/.test(username.trim());
+}
+
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
 
 function issue(field, message) {
@@ -42,9 +46,13 @@ export function validateRegistration(body) {
   const details = [];
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const username = (typeof body.username === "string" ? body.username.trim() : "") || (email ? email.split("@")[0] : "");
 
   if (name.length === 0 || name.length > 100 || CONTROL_CHARACTERS.test(name)) {
     details.push(issue("name", "Name must be 1-100 characters and contain no control characters."));
+  }
+  if (!isValidUsername(username)) {
+    details.push(issue("username", "Username must be 3-32 characters and contain only letters, numbers, dots, underscores, or dashes."));
   }
   if (!isValidEmail(email)) {
     details.push(issue("email", "A valid email address is required."));
@@ -53,7 +61,7 @@ export function validateRegistration(body) {
     details.push(issue("password", "Password must be between 8 and 72 UTF-8 bytes."));
   }
 
-  return { name, email, password: body.password, details };
+  return { name, username, email, password: body.password, details };
 }
 
 export function validateLogin(body) {
@@ -66,15 +74,23 @@ export function validateLogin(body) {
 
   const details = [];
   const email = typeof body.email === "string" ? body.email.trim() : "";
+  const username = typeof body.username === "string" ? body.username.trim() : "";
+  const hasEmail = email.length > 0;
+  const hasUsername = username.length > 0;
 
-  if (!isValidEmail(email)) {
+  if (!hasEmail && !hasUsername) {
+    details.push(issue("email", "A valid email address or username is required."));
+  } else if (hasEmail && !isValidEmail(email)) {
     details.push(issue("email", "A valid email address is required."));
+  } else if (hasUsername && !isValidUsername(username)) {
+    details.push(issue("username", "Username must be 3-32 characters and contain only letters, numbers, dots, underscores, or dashes."));
   }
+
   if (!isValidPassword(body.password)) {
     details.push(issue("password", "Password must be between 8 and 72 UTF-8 bytes."));
   }
 
-  return { email, password: body.password, details };
+  return { email, username, password: body.password, details };
 }
 
 export function validateSearchQuery(rawQuery) {

@@ -15,6 +15,7 @@ type FieldErrors = Record<string, string | undefined>
 
 interface RegistrationFields {
   name: string
+  username: string
   email: string
   password: string
   confirmPassword: string
@@ -29,6 +30,14 @@ function validate(fields: RegistrationFields): FieldErrors {
     errors.name = 'Enter your full name.'
   } else if (name.length > 100) {
     errors.name = 'Name must be 100 characters or fewer.'
+  }
+
+  // Username
+  const username = fields.username.trim()
+  if (username.length === 0) {
+    errors.username = 'Choose a username.'
+  } else if (!/^[a-zA-Z0-9._-]{3,32}$/.test(username)) {
+    errors.username = 'Username must be 3-32 characters using letters, numbers, dots, underscores, or dashes.'
   }
 
   // Email
@@ -63,6 +72,7 @@ interface RegistrationFormProps {
 
 export default function RegistrationForm({ onAuthenticated }: RegistrationFormProps) {
   const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -72,6 +82,7 @@ export default function RegistrationForm({ onAuthenticated }: RegistrationFormPr
 
   // Stable, accessible IDs
   const nameId = useId()
+  const usernameId = useId()
   const emailId = useId()
   const passwordId = useId()
   const confirmPasswordId = useId()
@@ -86,14 +97,14 @@ export default function RegistrationForm({ onAuthenticated }: RegistrationFormPr
 
     setFormError(null)
 
-    const errors = validate({ name, email, password, confirmPassword })
+    const errors = validate({ name, username, email, password, confirmPassword })
     setFieldErrors(errors)
     if (Object.values(errors).some(Boolean)) return
 
     setSubmitting(true)
     try {
       onAuthenticated(
-        await register({ name: name.trim(), email: email.trim(), password }),
+        await register({ name: name.trim(), username: username.trim(), email: email.trim(), password }),
       )
     } catch (error) {
       // Map backend field-level issues (e.g. duplicate email) to the form
@@ -133,6 +144,30 @@ export default function RegistrationForm({ onAuthenticated }: RegistrationFormPr
         {fieldErrors.name !== undefined && (
           <p className="auth-field-error" id={`${nameId}-error`}>
             {fieldErrors.name}
+          </p>
+        )}
+      </div>
+
+      {/* ── Username ── */}
+      <div className="auth-field">
+        <label htmlFor={usernameId}>Username</label>
+        <input
+          id={usernameId}
+          name="username"
+          type="text"
+          autoComplete="username"
+          value={username}
+          disabled={submitting}
+          aria-invalid={fieldErrors.username !== undefined}
+          aria-describedby={fieldErrors.username !== undefined ? `${usernameId}-error` : undefined}
+          onChange={(event) => {
+            setUsername(event.target.value)
+            clearFieldError('username')
+          }}
+        />
+        {fieldErrors.username !== undefined && (
+          <p className="auth-field-error" id={`${usernameId}-error`}>
+            {fieldErrors.username}
           </p>
         )}
       </div>

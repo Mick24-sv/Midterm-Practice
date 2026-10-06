@@ -274,6 +274,7 @@ export async function createRecord(
 // INT-02 — Registration API call
 export async function register(credentials: {
   name: string
+  username: string
   email: string
   password: string
 }): Promise<AuthSession> {
@@ -310,7 +311,8 @@ export async function register(credentials: {
 }
 
 export async function login(credentials: {
-  email: string
+  email?: string
+  username?: string
   password: string
 }): Promise<AuthSession> {
   let response: Response

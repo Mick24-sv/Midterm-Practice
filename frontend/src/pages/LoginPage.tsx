@@ -26,7 +26,8 @@ export default function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
 
     setLoading(true)
     try {
-      const session = await login({ email: username, password })
+      const identifier = username.trim()
+      const session = await login({ email: identifier.includes('@') ? identifier : undefined, username: identifier.includes('@') ? undefined : identifier, password })
       storeSession(session)
       onLogin({ user: { name: session.user.name } })
     } catch (err) {
@@ -60,13 +61,13 @@ export default function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
         <form className="login-form" onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label htmlFor="username" className="form-label">
-              Username
+              Email or Username
             </label>
             <input
               id="username"
               type="text"
               className="form-input"
-              placeholder="Enter your username"
+              placeholder="Enter your email or username"
               value={username}
               autoComplete="username"
               autoFocus

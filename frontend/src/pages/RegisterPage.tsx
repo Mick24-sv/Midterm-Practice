@@ -80,7 +80,7 @@ export default function RegisterPage({ onRegister, onGoToLogin }: RegisterPagePr
 
     setLoading(true)
     try {
-      const session = await register({ name: fullName, email, password })
+      const session = await register({ name: fullName, username, email, password })
       storeSession(session)
       setSuccess(true)
       setTimeout(() => onRegister({ user: { name: session.user.name } }), 1500)
