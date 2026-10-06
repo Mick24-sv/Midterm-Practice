@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Navbar from './components/Navbar'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import DashboardPage from './pages/DashboardPage'
 import './App.css'
 
 type Page     = 'Home' | 'Dashboard' | 'Records'
@@ -50,12 +51,7 @@ function App() {
           </section>
         )}
 
-        {activePage === 'Dashboard' && (
-          <section id="dashboard" className="page-section">
-            <h1>Dashboard</h1>
-            <p>Your dashboard overview will appear here.</p>
-          </section>
-        )}
+        {activePage === 'Dashboard' && <DashboardPage />}
 
         {activePage === 'Records' && (
           <section id="records" className="page-section">
