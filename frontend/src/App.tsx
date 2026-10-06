@@ -1,15 +1,16 @@
 // INT-01 — Login flow wired to backend authentication API.
 // INT-02 — Registration form wired to backend registration API.
 // INT-03 — Connect "Add Record" form to Create Record API.
+// INT-04 — "View Records" table reads from the Get Records API.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Navbar from './components/Navbar'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ViewRecordsTable, { type ViewRecord } from './pages/ViewRecordsTable'
 import AddRecordForm from './AddRecordForm'
-import { fetchRecords } from './api'
+import { fetchRecords, errorMessage } from './api'
 import { readStoredSession, clearStoredSession } from './session'
 import type { AuthSession } from './api'
 import type { ApiRecord } from './api'
@@ -40,6 +41,7 @@ export default function App() {
   const [recordSearch, setRecordSearch] = useState('')
   const [records, setRecords] = useState<AppRecord[]>([])
   const [loadingRecords, setLoadingRecords] = useState(false)
+  const [recordsError, setRecordsError] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [session, setSession] = useState<AuthSession | null>(null)
 
@@ -51,24 +53,38 @@ export default function App() {
     }
   }, [])
 
-  useEffect(() => {
-    if (session) {
-      loadRecords()
-    }
-  }, [session])
+  const loadRecords = useCallback(
+    async (token: string, signal?: AbortSignal) => {
+      setLoadingRecords(true)
+      setRecordsError(null)
+      try {
+        const apiRecords = await fetchRecords(token, { signal })
+        setRecords(apiRecords.map(toViewRecord))
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return
+        }
+        setRecords([])
+        setRecordsError(errorMessage(error))
+      } finally {
+        if (signal?.aborted !== true) {
+          setLoadingRecords(false)
+        }
+      }
+    },
+    [],
+  )
 
-  async function loadRecords() {
+  // INT-04 — fetch records whenever the authenticated session changes, and
+  // abort the in-flight request so a logout or token swap cannot overwrite it.
+  useEffect(() => {
     if (!session) return
-    setLoadingRecords(true)
-    try {
-      const apiRecords = await fetchRecords(session.token)
-      setRecords(apiRecords.map(toViewRecord))
-    } catch (error) {
-      console.error('Failed to load records:', error)
-    } finally {
-      setLoadingRecords(false)
-    }
-  }
+
+    const controller = new AbortController()
+    void loadRecords(session.token, controller.signal)
+
+    return () => controller.abort()
+  }, [session, loadRecords])
 
   function handleLogin() {
     const stored = readStoredSession()
@@ -95,9 +111,15 @@ export default function App() {
     setRecords([])
   }
 
-  async function handleRecordCreated(apiRecord: ApiRecord) {
+  function handleRecordCreated(apiRecord: ApiRecord) {
+    setRecordsError(null)
     setRecords((prev) => [toViewRecord(apiRecord), ...prev])
     setShowAddForm(false)
+  }
+
+  function handleRetryRecords() {
+    if (!session) return
+    void loadRecords(session.token)
   }
 
   // ── Auth screens ───────────────────────────────────────────
@@ -224,7 +246,19 @@ export default function App() {
               </div>
             )}
 
-            {loadingRecords ? (
+            {recordsError !== null ? (
+              <div className="records-error" role="alert">
+                <p>{recordsError}</p>
+                <button
+                  type="button"
+                  className="records-retry"
+                  onClick={handleRetryRecords}
+                  disabled={loadingRecords}
+                >
+                  {loadingRecords ? 'Retrying…' : 'Try again'}
+                </button>
+              </div>
+            ) : loadingRecords ? (
               <p className="loading-records">Loading records…</p>
             ) : (
               <ViewRecordsTable records={records} searchQuery={recordSearch} />

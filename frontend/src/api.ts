@@ -142,7 +142,10 @@ export interface ApiRecord {
   updated_at: string
 }
 
-export async function fetchRecords(token: string): Promise<ApiRecord[]> {
+export async function fetchRecords(
+  token: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<ApiRecord[]> {
   let response: Response
   try {
     response = await fetch(`${apiBaseUrl}/records`, {
@@ -151,8 +154,12 @@ export async function fetchRecords(token: string): Promise<ApiRecord[]> {
         Accept: 'application/json',
         Authorization: `Bearer ${token}`,
       },
+      signal: options.signal,
     })
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error
+    }
     throw new ApiError(
       'Could not reach the records API. Check that the backend is running.',
       0,
