@@ -1,0 +1,209 @@
+/* ── Login wrapper (full-screen centred layout) ─────────── */
+.login-wrapper {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--bg);
+}
+
+/* ── Card ────────────────────────────────────────────────── */
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px 36px 32px;
+  box-shadow: var(--shadow);
+
+  @media (max-width: 480px) {
+    padding: 28px 20px 24px;
+    border-radius: 8px;
+  }
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.login-card__header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-card__logo {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.login-card__title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0 0 6px;
+  letter-spacing: -0.3px;
+}
+
+.login-card__subtitle {
+  font-size: 14px;
+  color: var(--text);
+  margin: 0;
+}
+
+/* ── Error banner ────────────────────────────────────────── */
+.login-card__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .login-card__error {
+    background: rgba(248, 113, 113, 0.1);
+    border-color: rgba(248, 113, 113, 0.3);
+    color: #f87171;
+  }
+}
+
+/* ── Form ────────────────────────────────────────────────── */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.form-input-wrapper {
+  position: relative;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input::placeholder {
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.form-input--padded-right {
+  padding-right: 44px;
+}
+
+/* Show/hide password button */
+.form-input__toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.form-input__toggle:hover {
+  color: var(--accent);
+}
+
+/* ── Submit button ───────────────────────────────────────── */
+.login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 16px;
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s, box-shadow 0.2s;
+}
+
+.login-btn:hover:not(:disabled) {
+  opacity: 0.88;
+  box-shadow: var(--shadow);
+}
+
+.login-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.login-btn__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Hint ────────────────────────────────────────────────── */
+.login-card__hint {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text);
+
+  code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+}
