@@ -12,7 +12,7 @@ import DashboardPage from './pages/DashboardPage'
 import ViewRecordsTable, { type ViewRecord } from './pages/ViewRecordsTable'
 import AddRecordForm from './AddRecordForm'
 import EditRecordForm from './EditRecordForm'
-import { fetchRecords, errorMessage } from './api'
+import { fetchRecords, deleteRecord, errorMessage } from './api'
 import { readStoredSession, clearStoredSession } from './session'
 import type { AuthSession } from './api'
 import type { ApiRecord } from './api'
@@ -46,6 +46,9 @@ export default function App() {
   const [recordsError, setRecordsError] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingRecordId, setEditingRecordId] = useState<number | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<AppRecord | null>(null)
+  const [deletingIds, setDeletingIds] = useState<string[]>([])
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [session, setSession] = useState<AuthSession | null>(null)
 
   useEffect(() => {
@@ -114,6 +117,7 @@ export default function App() {
     setRecords([])
     setShowAddForm(false)
     setEditingRecordId(null)
+    setPendingDelete(null)
   }
 
   function handleRecordCreated(apiRecord: ApiRecord) {
@@ -122,9 +126,10 @@ export default function App() {
     setShowAddForm(false)
   }
 
-  // Editing and adding are mutually exclusive modals on the same surface.
+  // Adding, editing, and deleting are mutually exclusive on the same surface.
   function openAddForm() {
     setEditingRecordId(null)
+    setPendingDelete(null)
     setShowAddForm(true)
   }
 
@@ -142,6 +147,43 @@ export default function App() {
     setRecordsError(null)
     setShowAddForm(false)
     setEditingRecordId(match.apiRecord.id)
+  }
+
+  // INT-06 — DELETE is irreversible, so the row button opens a confirmation
+  // step rather than removing the record on click.
+  function handleDeleteRecord(record: ViewRecord) {
+    const match = records.find((candidate) => candidate.id === record.id)
+    if (!match) return
+
+    setRecordsError(null)
+    setDeleteError(null)
+    setShowAddForm(false)
+    setEditingRecordId(null)
+    setPendingDelete(match)
+  }
+
+  function cancelDelete() {
+    setPendingDelete(null)
+    setDeleteError(null)
+  }
+
+  async function confirmDelete() {
+    if (!session || pendingDelete === null) return
+
+    const { id, apiRecord } = pendingDelete
+    if (deletingIds.includes(id)) return
+
+    setDeletingIds((current) => [...current, id])
+    setDeleteError(null)
+    try {
+      await deleteRecord(session.token, apiRecord.id)
+      setRecords((prev) => prev.filter((record) => record.id !== id))
+      setPendingDelete(null)
+    } catch (error) {
+      setDeleteError(errorMessage(error))
+    } finally {
+      setDeletingIds((current) => current.filter((pending) => pending !== id))
+    }
   }
 
   function handleRecordUpdated(apiRecord: ApiRecord) {
@@ -286,6 +328,51 @@ export default function App() {
               )
             })()}
 
+            {pendingDelete !== null && session && (
+              <div className="modal-overlay" onClick={cancelDelete} role="dialog" aria-modal="true" aria-labelledby="delete-record-title">
+                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                  <h2 id="delete-record-title">Delete Record</h2>
+                  <button className="modal-close" onClick={cancelDelete} aria-label="Close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+
+                  {deleteError !== null && (
+                    <p className="auth-alert" role="alert">
+                      {deleteError}
+                    </p>
+                  )}
+
+                  <p className="delete-record-confirm">
+                    Delete <strong>{pendingDelete.title}</strong> ({pendingDelete.id})? This
+                    cannot be undone.
+                  </p>
+
+                  <div className="delete-record-actions">
+                    <button
+                      type="button"
+                      className="delete-record-cancel"
+                      onClick={cancelDelete}
+                      disabled={deletingIds.includes(pendingDelete.id)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="delete-record-confirm-btn"
+                      onClick={() => void confirmDelete()}
+                      disabled={deletingIds.includes(pendingDelete.id)}
+                      autoFocus
+                    >
+                      {deletingIds.includes(pendingDelete.id) ? 'Deleting…' : 'Delete record'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {showAddForm && session && (
               <div className="modal-overlay" onClick={() => setShowAddForm(false)} role="dialog" aria-modal="true" aria-labelledby="add-record-title">
                 <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -316,7 +403,13 @@ export default function App() {
             ) : loadingRecords ? (
               <p className="loading-records">Loading records…</p>
             ) : (
-              <ViewRecordsTable records={records} searchQuery={recordSearch} onEdit={handleEditRecord} />
+              <ViewRecordsTable
+                records={records}
+                searchQuery={recordSearch}
+                onEdit={handleEditRecord}
+                onDelete={handleDeleteRecord}
+                deletingIds={deletingIds}
+              />
             )}
           </section>
         )}

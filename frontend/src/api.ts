@@ -215,6 +215,31 @@ export async function updateRecord(
   return payload.record
 }
 
+// INT-06 — Delete Record API call. The backend answers 204 with no body, so
+// there is nothing to parse on success.
+export async function deleteRecord(token: string, id: number): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch(`${apiBaseUrl}/records/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch {
+    throw new ApiError(
+      'Could not reach the records API. Check that the backend is running.',
+      0,
+      'network_error',
+    )
+  }
+
+  if (!response.ok) {
+    throw await toApiError(response)
+  }
+}
+
 export async function createRecord(
   token: string,
   data: { title: string; description: string; status: 'active' | 'archived' },

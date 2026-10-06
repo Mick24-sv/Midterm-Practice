@@ -10,12 +10,18 @@ interface ViewRecordsTableProps {
   records: readonly ViewRecord[]
   searchQuery: string
   onEdit?: (record: ViewRecord) => void
+  onDelete?: (record: ViewRecord) => void
+  // Ids of records with a delete request in flight, so their row button can
+  // show progress and be disabled against double submits.
+  deletingIds?: readonly string[]
 }
 
 export default function ViewRecordsTable({
   records,
   searchQuery,
   onEdit,
+  onDelete,
+  deletingIds = [],
 }: ViewRecordsTableProps) {
   const normalizedQuery = searchQuery.trim().toLowerCase()
   const visibleRecords = records.filter((record) =>
@@ -44,7 +50,9 @@ export default function ViewRecordsTable({
               <th scope="col">Category</th>
               <th scope="col">Last Updated</th>
               <th scope="col">Status</th>
-              {onEdit !== undefined && <th scope="col">Actions</th>}
+              {(onEdit !== undefined || onDelete !== undefined) && (
+                <th scope="col">Actions</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -60,22 +68,38 @@ export default function ViewRecordsTable({
                       {record.status}
                     </span>
                   </td>
-                  {onEdit !== undefined && (
+                  {(onEdit !== undefined || onDelete !== undefined) && (
                     <td className="activity-table__actions">
-                      <button
-                        type="button"
-                        className="record-edit-btn"
-                        onClick={() => onEdit(record)}
-                      >
-                        Edit<span className="visually-hidden"> record {record.id}</span>
-                      </button>
+                      {onEdit !== undefined && (
+                        <button
+                          type="button"
+                          className="record-edit-btn"
+                          onClick={() => onEdit(record)}
+                        >
+                          Edit<span className="visually-hidden"> record {record.id}</span>
+                        </button>
+                      )}
+                      {onDelete !== undefined && (
+                        <button
+                          type="button"
+                          className="record-delete-btn"
+                          onClick={() => onDelete(record)}
+                          disabled={deletingIds.includes(record.id)}
+                        >
+                          {deletingIds.includes(record.id) ? 'Deleting…' : 'Delete'}
+                          <span className="visually-hidden"> record {record.id}</span>
+                        </button>
+                      )}
                     </td>
                   )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={onEdit === undefined ? 5 : 6} className="view-records-table__empty">
+                <td
+                  colSpan={onEdit === undefined && onDelete === undefined ? 5 : 6}
+                  className="view-records-table__empty"
+                >
                   {normalizedQuery
                     ? `No records found matching "${searchQuery}".`
                     : 'No records available.'}
