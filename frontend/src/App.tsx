@@ -1,25 +1,45 @@
 import { useState } from 'react'
 import Navbar from './components/Navbar'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import './App.css'
 
-type Page = 'Home' | 'Dashboard' | 'Records'
+type Page     = 'Home' | 'Dashboard' | 'Records'
+type AuthView = 'login' | 'register'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [authView, setAuthView]     = useState<AuthView>('login')
   const [activePage, setActivePage] = useState<Page>('Home')
 
-  // Show login screen until authenticated
+  // ── Auth screens ───────────────────────────────────────────
   if (!isLoggedIn) {
-    return <LoginPage onLogin={() => setIsLoggedIn(true)} />
+    if (authView === 'register') {
+      return (
+        <RegisterPage
+          onRegister={() => setAuthView('login')}   // redirect to login after success
+          onGoToLogin={() => setAuthView('login')}
+        />
+      )
+    }
+    return (
+      <LoginPage
+        onLogin={() => setIsLoggedIn(true)}
+        onGoToRegister={() => setAuthView('register')}
+      />
+    )
   }
 
+  // ── Main app ───────────────────────────────────────────────
   return (
     <>
       <Navbar
         activePage={activePage}
         onNavigate={setActivePage}
-        onLogout={() => setIsLoggedIn(false)}
+        onLogout={() => {
+          setIsLoggedIn(false)
+          setAuthView('login')
+        }}
       />
 
       <main>
