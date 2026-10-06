@@ -193,7 +193,7 @@
 
 /* ── Hint ────────────────────────────────────────────────── */
 .login-card__hint {
-  margin: 20px 0 0;
+  margin: 12px 0 0;
   text-align: center;
   font-size: 13px;
   color: var(--text);
@@ -206,4 +206,28 @@
     border-radius: 3px;
     color: var(--accent);
   }
+}
+
+/* ── Switch to register ───────────────────────────────────── */
+.login-card__switch {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.login-card__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.login-card__link:hover {
+  opacity: 0.8;
 }
