@@ -3,8 +3,10 @@
 // INT-03 — Connect "Add Record" form to Create Record API.
 // INT-04 — "View Records" table reads from the Get Records API.
 // INT-05 — "Edit Record" form wired to the Update Record API.
+// INT-07 — CRUD operations reconcile against the server instead of trusting
+// locally patched state, so ordering and derived fields stay authoritative.
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Navbar from './components/Navbar'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
