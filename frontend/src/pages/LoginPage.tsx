@@ -3,9 +3,10 @@ import './LoginPage.css'
 
 interface LoginPageProps {
   onLogin: () => void
+  onGoToRegister: () => void
 }
 
-export default function LoginPage({ onLogin }: LoginPageProps) {
+export default function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -119,6 +120,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
+
+        <p className="login-card__switch">
+          Don't have an account?{' '}
+          <button type="button" className="login-card__link" onClick={onGoToRegister}>
+            Sign up
+          </button>
+        </p>
 
         <p className="login-card__hint">
           Demo credentials: <code>admin</code> / <code>admin123</code>
