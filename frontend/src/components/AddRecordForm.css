@@ -1,0 +1,168 @@
+/* ── Add Record Form Component Styling ─────────────────────── */
+.add-record-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: clamp(20px, 3.5vw, 28px);
+  box-shadow: var(--shadow);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  animation: addRecordFadeIn 0.25s ease-out;
+}
+
+@keyframes addRecordFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.add-record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.add-record-title {
+  font-size: clamp(18px, 2.5vw, 22px);
+  font-weight: 700;
+  color: var(--text-h);
+  margin: 0 0 4px;
+}
+
+.add-record-subtitle {
+  font-size: clamp(13px, 2vw, 14px);
+  color: var(--text);
+  margin: 0;
+}
+
+.add-record-close-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.add-record-close-btn:hover {
+  background: var(--code-bg);
+  color: var(--text-h);
+}
+
+.add-record-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.add-record-required {
+  color: var(--danger, #dc2626);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.add-record-field-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.add-record-char-count {
+  font-size: 12px;
+  color: var(--text);
+  margin: 0 0 0 auto;
+  white-space: nowrap;
+}
+
+.add-record-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.add-record-submit-btn {
+  min-width: 140px;
+}
+
+.add-record-cancel-btn {
+  padding: 10px 18px;
+  min-height: 42px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.add-record-cancel-btn:hover:not(:disabled) {
+  background: var(--code-bg);
+  border-color: var(--text);
+}
+
+.add-record-cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.add-record-alert--success {
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .add-record-alert--success {
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.18);
+    border-color: rgba(16, 185, 129, 0.45);
+  }
+}
+
+.add-record-alert--error {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--danger, #dc2626);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+}
+
+@media (max-width: 480px) {
+  .add-record-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .add-record-submit-btn,
+  .add-record-cancel-btn {
+    width: 100%;
+  }
+}
+

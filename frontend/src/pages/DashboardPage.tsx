@@ -105,8 +105,19 @@ function StatusBadge({ status }: { status: ActivityRow['status'] }) {
   )
 }
 
+const formattedToday = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+})
+
+interface DashboardPageProps {
+  onCreateRecord?: () => void
+}
+
 // ── Main component ─────────────────────────────────────────
-export default function DashboardPage() {
+export default function DashboardPage({ onCreateRecord }: DashboardPageProps = {}) {
   return (
     <div className="dashboard">
 
@@ -117,7 +128,7 @@ export default function DashboardPage() {
           <p className="dashboard__subtitle">Welcome back! Here's what's happening today.</p>
         </div>
         <p className="dashboard__date">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          {formattedToday}
         </p>
       </div>
 
@@ -182,13 +193,33 @@ export default function DashboardPage() {
           </div>
           <ul className="quick-actions-list">
             {[
-              { label: 'Add New User',    icon: '👤' },
-              { label: 'Create Record',   icon: '📄' },
-              { label: 'Generate Report', icon: '📊' },
-              { label: 'System Settings', icon: '⚙️'  },
-            ].map(({ label, icon }) => (
+              {
+                label: 'Add New User',
+                icon: '👤',
+                onClick: undefined,
+              },
+              {
+                label: 'Create Record',
+                icon: '📄',
+                onClick: onCreateRecord,
+              },
+              {
+                label: 'Generate Report',
+                icon: '📊',
+                onClick: undefined,
+              },
+              {
+                label: 'System Settings',
+                icon: '⚙️',
+                onClick: undefined,
+              },
+            ].map(({ label, icon, onClick }) => (
               <li key={label}>
-                <button type="button" className="quick-action-btn">
+                <button
+                  type="button"
+                  className="quick-action-btn"
+                  onClick={onClick}
+                >
                   <span className="quick-action-btn__icon" aria-hidden="true">{icon}</span>
                   <span>{label}</span>
                   <svg className="quick-action-btn__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

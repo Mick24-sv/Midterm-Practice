@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ViewRecordsTable, { type ViewRecord } from './pages/ViewRecordsTable'
+import AddRecordForm from './components/AddRecordForm'
 import './App.css'
 
 type Page     = 'Home' | 'Dashboard' | 'Records'
@@ -17,6 +18,17 @@ export default function App() {
   const [authView, setAuthView]     = useState<AuthView>('login')
   const [activePage, setActivePage] = useState<Page>('Home')
   const [recordSearch, setRecordSearch] = useState('')
+  const [showAddForm, setShowAddForm]   = useState(false)
+
+  // ── Sample Records Data ────────────────────────────────────
+  const sampleRecords: ViewRecord[] = [
+    { id: 'REC-1001', title: 'Q3 Financial Audit', category: 'Finance', updated: '2 hours ago', status: 'Completed' },
+    { id: 'REC-1002', title: 'Employee Onboarding Docs', category: 'HR', updated: 'Yesterday', status: 'Completed' },
+    { id: 'REC-1003', title: 'Server Migration Plan', category: 'IT', updated: '3 days ago', status: 'Pending' },
+    { id: 'REC-1004', title: 'Vendor Contract Review', category: 'Legal', updated: 'Last week', status: 'Completed' },
+  ]
+
+  const [records, setRecords] = useState<ViewRecord[]>(sampleRecords)
 
   // ── Auth screens ───────────────────────────────────────────
   if (!isLoggedIn) {
@@ -35,14 +47,6 @@ export default function App() {
       />
     )
   }
-
-  // ── Sample Records Data ────────────────────────────────────
-  const sampleRecords: ViewRecord[] = [
-    { id: 'REC-1001', title: 'Q3 Financial Audit', category: 'Finance', updated: '2 hours ago', status: 'Completed' },
-    { id: 'REC-1002', title: 'Employee Onboarding Docs', category: 'HR', updated: 'Yesterday', status: 'Completed' },
-    { id: 'REC-1003', title: 'Server Migration Plan', category: 'IT', updated: '3 days ago', status: 'Pending' },
-    { id: 'REC-1004', title: 'Vendor Contract Review', category: 'Legal', updated: 'Last week', status: 'Completed' },
-  ]
 
   // ── Main App Layout ────────────────────────────────────────
   return (
@@ -113,7 +117,14 @@ export default function App() {
         )}
 
         {/* ── DASHBOARD TAB ───────────────────────────────────── */}
-        {activePage === 'Dashboard' && <DashboardPage />}
+        {activePage === 'Dashboard' && (
+          <DashboardPage
+            onCreateRecord={() => {
+              setActivePage('Records')
+              setShowAddForm(true)
+            }}
+          />
+        )}
 
         {/* ── RECORDS TAB ─────────────────────────────────────── */}
         {activePage === 'Records' && (
@@ -133,12 +144,34 @@ export default function App() {
                 value={recordSearch}
                 onChange={(e) => setRecordSearch(e.target.value)}
               />
-              <button type="button" className="records-btn">
-                <span>+ Add Record</span>
+              <button
+                type="button"
+                className="records-btn"
+                onClick={() => setShowAddForm((prev) => !prev)}
+                aria-expanded={showAddForm}
+              >
+                <span>{showAddForm ? '✕ Close Form' : '+ Add Record'}</span>
               </button>
             </div>
 
-            <ViewRecordsTable records={sampleRecords} searchQuery={recordSearch} />
+            {showAddForm && (
+              <AddRecordForm
+                onCreated={(newRecord) => {
+                  const newViewRecord: ViewRecord = {
+                    id: `REC-${newRecord.id}`,
+                    title: newRecord.title,
+                    category: 'General',
+                    updated: 'Just now',
+                    status: newRecord.status === 'active' ? 'Completed' : 'Pending',
+                  }
+                  setRecords((prev) => [newViewRecord, ...prev])
+                  setShowAddForm(false)
+                }}
+                onCancel={() => setShowAddForm(false)}
+              />
+            )}
+
+            <ViewRecordsTable records={records} searchQuery={recordSearch} />
           </section>
         )}
       </main>
