@@ -132,6 +132,44 @@ async function toApiError(response: Response): Promise<ApiError> {
   )
 }
 
+// INT-02 — Registration API call
+export async function register(credentials: {
+  name: string
+  email: string
+  password: string
+}): Promise<AuthSession> {
+  let response: Response
+  try {
+    response = await fetch(`${apiBaseUrl}/auth/register`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    })
+  } catch {
+    throw new ApiError(
+      'Could not reach the registration API. Check that the backend is running.',
+      0,
+      'network_error',
+    )
+  }
+
+  if (!response.ok) {
+    throw await toApiError(response)
+  }
+
+  try {
+    return toAuthSession(await response.json())
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+    throw new ApiError('The API returned an unreadable response.', 0, 'invalid_response')
+  }
+}
+
 export async function login(credentials: {
   email: string
   password: string

@@ -166,3 +166,27 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* INT-02 — toggle between login and register */
+.auth-switch {
+  margin: 20px 0 0;
+  font-size: 14px;
+  text-align: center;
+  color: var(--text);
+}
+
+.auth-link {
+  font: inherit;
+  font-size: 14px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
