@@ -8,17 +8,18 @@ import './App.css'
 type Page     = 'Home' | 'Dashboard' | 'Records'
 type AuthView = 'login' | 'register'
 
-function App() {
+export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [authView, setAuthView]     = useState<AuthView>('login')
   const [activePage, setActivePage] = useState<Page>('Home')
+  const [recordSearch, setRecordSearch] = useState('')
 
   // ── Auth screens ───────────────────────────────────────────
   if (!isLoggedIn) {
     if (authView === 'register') {
       return (
         <RegisterPage
-          onRegister={() => setAuthView('login')}   // redirect to login after success
+          onRegister={() => setAuthView('login')}
           onGoToLogin={() => setAuthView('login')}
         />
       )
@@ -31,7 +32,20 @@ function App() {
     )
   }
 
-  // ── Main app ───────────────────────────────────────────────
+  // ── Sample Records Data ────────────────────────────────────
+  const sampleRecords = [
+    { id: 'REC-1001', title: 'Q3 Financial Audit', category: 'Finance', updated: '2 hours ago', status: 'Completed' },
+    { id: 'REC-1002', title: 'Employee Onboarding Docs', category: 'HR', updated: 'Yesterday', status: 'Completed' },
+    { id: 'REC-1003', title: 'Server Migration Plan', category: 'IT', updated: '3 days ago', status: 'Pending' },
+    { id: 'REC-1004', title: 'Vendor Contract Review', category: 'Legal', updated: 'Last week', status: 'Completed' },
+  ].filter(
+    (r) =>
+      r.title.toLowerCase().includes(recordSearch.toLowerCase()) ||
+      r.category.toLowerCase().includes(recordSearch.toLowerCase()) ||
+      r.id.toLowerCase().includes(recordSearch.toLowerCase())
+  )
+
+  // ── Main App Layout ────────────────────────────────────────
   return (
     <>
       <Navbar
@@ -44,24 +58,128 @@ function App() {
       />
 
       <main>
+        {/* ── HOME TAB ────────────────────────────────────────── */}
         {activePage === 'Home' && (
           <section id="home" className="page-section">
-            <h1>Home</h1>
-            <p>Welcome to the Mini Management System. Use the navigation bar above to get started.</p>
+            <div className="hero-banner">
+              <h1>Mini Management System</h1>
+              <p>
+                A clean, responsive prototype platform designed for agile teams to manage system
+                operations, view live analytics, and organize team records seamlessly across any device.
+              </p>
+              <div>
+                <button
+                  type="button"
+                  className="records-btn"
+                  onClick={() => setActivePage('Dashboard')}
+                >
+                  Go to Dashboard →
+                </button>
+              </div>
+            </div>
+
+            <div className="section-header">
+              <h2>Key System Highlights</h2>
+              <p className="section-subtitle">
+                Built with responsiveness and accessibility in mind.
+              </p>
+            </div>
+
+            <div className="features-grid">
+              <div className="feature-card">
+                <span className="feature-card__icon" aria-hidden="true">📊</span>
+                <h3 className="feature-card__title">Real-Time Metrics</h3>
+                <p className="feature-card__desc">
+                  Monitor active users, data operations, and task status cards with responsive grid layouts.
+                </p>
+              </div>
+
+              <div className="feature-card">
+                <span className="feature-card__icon" aria-hidden="true">📱</span>
+                <h3 className="feature-card__title">Mobile-First UI</h3>
+                <p className="feature-card__desc">
+                  Seamlessly adapts from small mobile screens (320px) up to ultra-wide desktop monitors.
+                </p>
+              </div>
+
+              <div className="feature-card">
+                <span className="feature-card__icon" aria-hidden="true">🔒</span>
+                <h3 className="feature-card__title">Secure Access</h3>
+                <p className="feature-card__desc">
+                  Includes full login and registration workflows with password strength validation and session controls.
+                </p>
+              </div>
+            </div>
           </section>
         )}
 
+        {/* ── DASHBOARD TAB ───────────────────────────────────── */}
         {activePage === 'Dashboard' && <DashboardPage />}
 
+        {/* ── RECORDS TAB ─────────────────────────────────────── */}
         {activePage === 'Records' && (
           <section id="records" className="page-section">
-            <h1>Records</h1>
-            <p>Your records and data will appear here.</p>
+            <div className="section-header">
+              <h1>Records Management</h1>
+              <p className="section-subtitle">
+                View, search, and manage system documentation and data entries.
+              </p>
+            </div>
+
+            <div className="records-toolbar">
+              <input
+                type="search"
+                className="records-search"
+                placeholder="Search by ID, title, or category..."
+                value={recordSearch}
+                onChange={(e) => setRecordSearch(e.target.value)}
+              />
+              <button type="button" className="records-btn">
+                <span>+ Add Record</span>
+              </button>
+            </div>
+
+            <div className="activity-card">
+              <div className="table-wrapper">
+                <table className="activity-table">
+                  <thead>
+                    <tr>
+                      <th>Record ID</th>
+                      <th>Title</th>
+                      <th>Category</th>
+                      <th>Last Updated</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sampleRecords.length > 0 ? (
+                      sampleRecords.map((rec) => (
+                        <tr key={rec.id}>
+                          <td className="activity-table__id"><code>{rec.id}</code></td>
+                          <td><strong>{rec.title}</strong></td>
+                          <td>{rec.category}</td>
+                          <td className="activity-table__date">{rec.updated}</td>
+                          <td>
+                            <span className={`status-badge status-badge--${rec.status.toLowerCase()}`}>
+                              {rec.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: 'var(--text)' }}>
+                          No records found matching "{recordSearch}".
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </section>
         )}
       </main>
     </>
   )
 }
-
-export default App
