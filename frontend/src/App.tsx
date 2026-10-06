@@ -21,14 +21,14 @@ function App() {
 
         {activePage === 'Dashboard' && (
           <section id="dashboard" className="page-section">
-            <h2>Dashboard</h2>
+            <h1>Dashboard</h1>
             <p>Your dashboard overview will appear here.</p>
           </section>
         )}
 
         {activePage === 'Records' && (
           <section id="records" className="page-section">
-            <h2>Records</h2>
+            <h1>Records</h1>
             <p>Your records and data will appear here.</p>
           </section>
         )}
