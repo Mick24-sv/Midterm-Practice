@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import Navbar from './components/Navbar'
+import LoginPage from './pages/LoginPage'
 import './App.css'
 
 type Page = 'Home' | 'Dashboard' | 'Records'
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [activePage, setActivePage] = useState<Page>('Home')
+
+  // Show login screen until authenticated
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={() => setIsLoggedIn(true)} />
+  }
 
   return (
     <>
