@@ -3,6 +3,7 @@ import Navbar from './components/Navbar'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
+import ViewRecordsTable, { type ViewRecord } from './pages/ViewRecordsTable'
 import './App.css'
 
 type Page     = 'Home' | 'Dashboard' | 'Records'
@@ -33,17 +34,12 @@ export default function App() {
   }
 
   // ── Sample Records Data ────────────────────────────────────
-  const sampleRecords = [
+  const sampleRecords: ViewRecord[] = [
     { id: 'REC-1001', title: 'Q3 Financial Audit', category: 'Finance', updated: '2 hours ago', status: 'Completed' },
     { id: 'REC-1002', title: 'Employee Onboarding Docs', category: 'HR', updated: 'Yesterday', status: 'Completed' },
     { id: 'REC-1003', title: 'Server Migration Plan', category: 'IT', updated: '3 days ago', status: 'Pending' },
     { id: 'REC-1004', title: 'Vendor Contract Review', category: 'Legal', updated: 'Last week', status: 'Completed' },
-  ].filter(
-    (r) =>
-      r.title.toLowerCase().includes(recordSearch.toLowerCase()) ||
-      r.category.toLowerCase().includes(recordSearch.toLowerCase()) ||
-      r.id.toLowerCase().includes(recordSearch.toLowerCase())
-  )
+  ]
 
   // ── Main App Layout ────────────────────────────────────────
   return (
@@ -139,44 +135,7 @@ export default function App() {
               </button>
             </div>
 
-            <div className="activity-card">
-              <div className="table-wrapper">
-                <table className="activity-table">
-                  <thead>
-                    <tr>
-                      <th>Record ID</th>
-                      <th>Title</th>
-                      <th>Category</th>
-                      <th>Last Updated</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sampleRecords.length > 0 ? (
-                      sampleRecords.map((rec) => (
-                        <tr key={rec.id}>
-                          <td className="activity-table__id"><code>{rec.id}</code></td>
-                          <td><strong>{rec.title}</strong></td>
-                          <td>{rec.category}</td>
-                          <td className="activity-table__date">{rec.updated}</td>
-                          <td>
-                            <span className={`status-badge status-badge--${rec.status.toLowerCase()}`}>
-                              {rec.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: 'var(--text)' }}>
-                          No records found matching "{recordSearch}".
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <ViewRecordsTable records={sampleRecords} searchQuery={recordSearch} />
           </section>
         )}
       </main>

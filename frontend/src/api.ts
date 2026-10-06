@@ -132,7 +132,7 @@ async function toApiError(response: Response): Promise<ApiError> {
   )
 }
 
-export interface Record {
+export interface ApiRecord {
   id: number
   title: string
   description: string
@@ -145,7 +145,7 @@ export interface Record {
 export async function createRecord(
   token: string,
   data: { title: string; description: string; status: 'active' | 'archived' },
-): Promise<Record> {
+): Promise<ApiRecord> {
   let response: Response
   try {
     response = await fetch(`${apiBaseUrl}/records`, {
@@ -169,7 +169,7 @@ export async function createRecord(
     throw await toApiError(response)
   }
 
-  const payload = await response.json() as { record: Record }
+  const payload = await response.json() as { record: ApiRecord }
   return payload.record
 }
 

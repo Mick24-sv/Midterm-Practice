@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createRecord, errorMessage, issuesByField } from './api'
-import type { AuthSession, Record } from './api'
+import type { ApiRecord, AuthSession } from './api'
 
 type FieldErrors = Record<string, string | undefined>
 
@@ -30,7 +30,7 @@ function validate(values: FormValues): FieldErrors {
 
 interface AddRecordFormProps {
   session: AuthSession
-  onCreated: (record: Record) => void
+  onCreated: (record: ApiRecord) => void
 }
 
 export default function AddRecordForm({ session, onCreated }: AddRecordFormProps) {
