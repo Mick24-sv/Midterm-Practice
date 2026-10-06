@@ -158,3 +158,218 @@ main {
     width: 100%;
   }
 }
+
+.app {
+  --surface: #ffffff;
+  --danger: #c02b2b;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 56px 24px 64px;
+  box-sizing: border-box;
+  text-align: left;
+
+  @media (prefers-color-scheme: dark) {
+    --surface: #1f2028;
+    --danger: #f2777a;
+
+    color: var(--text);
+  }
+}
+
+.app-header {
+  width: 100%;
+  max-width: 420px;
+
+  h1 {
+    font-size: 32px;
+    letter-spacing: -0.96px;
+    margin: 0 0 6px;
+
+    @media (max-width: 1024px) {
+      font-size: 26px;
+    }
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+
+  h2 {
+    margin: 0 0 6px;
+  }
+
+  @media (max-width: 1024px) {
+    padding: 20px;
+  }
+}
+
+.auth-intro {
+  font-size: 15px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-h);
+  }
+
+  input {
+    font: inherit;
+    font-size: 16px;
+    padding: 10px 12px;
+    color: var(--text-h);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  input:disabled {
+    opacity: 0.7;
+  }
+
+  input[aria-invalid='true'] {
+    border-color: var(--danger);
+  }
+}
+
+.auth-field-error {
+  font-size: 14px;
+  color: var(--danger);
+}
+
+.auth-alert {
+  padding: 10px 12px;
+  font-size: 15px;
+  color: var(--text-h);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+}
+
+.auth-submit {
+  font: inherit;
+  font-size: 16px;
+  padding: 10px 16px;
+  color: #ffffff;
+  background: var(--accent);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.2s;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: progress;
+  }
+}
+
+.session-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 22px 0 0;
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 15px;
+  }
+
+  dt {
+    color: var(--text);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--text-h);
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ── AddRecordForm extras ───────────────────────────────── */
+.auth-field textarea,
+.auth-field select {
+  font: inherit;
+  font-size: 16px;
+  padding: 10px 12px;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.auth-field textarea:focus-visible,
+.auth-field select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.auth-field textarea:disabled,
+.auth-field select:disabled {
+  opacity: 0.7;
+}
+
+.auth-field textarea[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.add-record-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.add-record-required {
+  color: var(--danger);
+}
+
+.add-record-char-count {
+  font-size: 13px;
+  color: var(--text);
+  margin: 0;
+  text-align: right;
+}
