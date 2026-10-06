@@ -2,6 +2,7 @@
 // INT-02 — Registration form wired to backend registration API.
 // INT-03 — Connect "Add Record" form to Create Record API.
 // INT-04 — "View Records" table reads from the Get Records API.
+// INT-05 — "Edit Record" form wired to the Update Record API.
 
 import { useState, useEffect, useCallback } from 'react'
 import Navbar from './components/Navbar'
@@ -10,6 +11,7 @@ import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ViewRecordsTable, { type ViewRecord } from './pages/ViewRecordsTable'
 import AddRecordForm from './AddRecordForm'
+import EditRecordForm from './EditRecordForm'
 import { fetchRecords, errorMessage } from './api'
 import { readStoredSession, clearStoredSession } from './session'
 import type { AuthSession } from './api'
@@ -43,6 +45,7 @@ export default function App() {
   const [loadingRecords, setLoadingRecords] = useState(false)
   const [recordsError, setRecordsError] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingRecordId, setEditingRecordId] = useState<number | null>(null)
   const [session, setSession] = useState<AuthSession | null>(null)
 
   useEffect(() => {
@@ -109,6 +112,8 @@ export default function App() {
     setIsLoggedIn(false)
     setAuthView('login')
     setRecords([])
+    setShowAddForm(false)
+    setEditingRecordId(null)
   }
 
   function handleRecordCreated(apiRecord: ApiRecord) {
@@ -117,9 +122,34 @@ export default function App() {
     setShowAddForm(false)
   }
 
+  // Editing and adding are mutually exclusive modals on the same surface.
+  function openAddForm() {
+    setEditingRecordId(null)
+    setShowAddForm(true)
+  }
+
   function handleRetryRecords() {
     if (!session) return
     void loadRecords(session.token)
+  }
+
+  function handleEditRecord(record: ViewRecord) {
+    // The table only knows the ViewRecord shape, so look up the full API record
+    // by its stable display id rather than trusting the shape it passed back.
+    const match = records.find((candidate) => candidate.id === record.id)
+    if (!match) return
+
+    setRecordsError(null)
+    setShowAddForm(false)
+    setEditingRecordId(match.apiRecord.id)
+  }
+
+  function handleRecordUpdated(apiRecord: ApiRecord) {
+    setRecords((prev) => {
+      const viewId = toViewRecord(apiRecord).id
+      return prev.map((record) => (record.id === viewId ? toViewRecord(apiRecord) : record))
+    })
+    setEditingRecordId(null)
   }
 
   // ── Auth screens ───────────────────────────────────────────
@@ -226,10 +256,35 @@ export default function App() {
                 value={recordSearch}
                 onChange={(e) => setRecordSearch(e.target.value)}
               />
-              <button type="button" className="records-btn" onClick={() => setShowAddForm(true)}>
+              <button type="button" className="records-btn" onClick={openAddForm}>
                 <span>+ Add Record</span>
               </button>
             </div>
+
+            {editingRecordId !== null && session && (() => {
+              const editing = records.find((record) => record.apiRecord.id === editingRecordId)
+              if (!editing) return null
+
+              return (
+                <div className="modal-overlay" onClick={() => setEditingRecordId(null)} role="dialog" aria-modal="true" aria-labelledby="edit-record-title">
+                  <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                    <h2 id="edit-record-title">Edit Record</h2>
+                    <button className="modal-close" onClick={() => setEditingRecordId(null)} aria-label="Close">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                    <EditRecordForm
+                      key={editing.apiRecord.id}
+                      session={session}
+                      record={editing.apiRecord}
+                      onUpdated={handleRecordUpdated}
+                    />
+                  </div>
+                </div>
+              )
+            })()}
 
             {showAddForm && session && (
               <div className="modal-overlay" onClick={() => setShowAddForm(false)} role="dialog" aria-modal="true" aria-labelledby="add-record-title">
@@ -261,7 +316,7 @@ export default function App() {
             ) : loadingRecords ? (
               <p className="loading-records">Loading records…</p>
             ) : (
-              <ViewRecordsTable records={records} searchQuery={recordSearch} />
+              <ViewRecordsTable records={records} searchQuery={recordSearch} onEdit={handleEditRecord} />
             )}
           </section>
         )}

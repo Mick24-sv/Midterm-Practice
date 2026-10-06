@@ -175,6 +175,46 @@ export async function fetchRecords(
   return payload.records
 }
 
+export interface RecordUpdate {
+  title?: string
+  description?: string
+  status?: 'active' | 'archived'
+}
+
+// INT-05 — Update Record API call. PATCH accepts a partial body; the backend
+// requires at least one of title, description, or status.
+export async function updateRecord(
+  token: string,
+  id: number,
+  data: RecordUpdate,
+): Promise<ApiRecord> {
+  let response: Response
+  try {
+    response = await fetch(`${apiBaseUrl}/records/${id}`, {
+      method: 'PATCH',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    })
+  } catch {
+    throw new ApiError(
+      'Could not reach the records API. Check that the backend is running.',
+      0,
+      'network_error',
+    )
+  }
+
+  if (!response.ok) {
+    throw await toApiError(response)
+  }
+
+  const payload = await response.json() as { record: ApiRecord }
+  return payload.record
+}
+
 export async function createRecord(
   token: string,
   data: { title: string; description: string; status: 'active' | 'archived' },

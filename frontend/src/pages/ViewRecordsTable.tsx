@@ -9,11 +9,13 @@ export interface ViewRecord {
 interface ViewRecordsTableProps {
   records: readonly ViewRecord[]
   searchQuery: string
+  onEdit?: (record: ViewRecord) => void
 }
 
 export default function ViewRecordsTable({
   records,
   searchQuery,
+  onEdit,
 }: ViewRecordsTableProps) {
   const normalizedQuery = searchQuery.trim().toLowerCase()
   const visibleRecords = records.filter((record) =>
@@ -42,6 +44,7 @@ export default function ViewRecordsTable({
               <th scope="col">Category</th>
               <th scope="col">Last Updated</th>
               <th scope="col">Status</th>
+              {onEdit !== undefined && <th scope="col">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -57,11 +60,22 @@ export default function ViewRecordsTable({
                       {record.status}
                     </span>
                   </td>
+                  {onEdit !== undefined && (
+                    <td className="activity-table__actions">
+                      <button
+                        type="button"
+                        className="record-edit-btn"
+                        onClick={() => onEdit(record)}
+                      >
+                        Edit<span className="visually-hidden"> record {record.id}</span>
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="view-records-table__empty">
+                <td colSpan={onEdit === undefined ? 5 : 6} className="view-records-table__empty">
                   {normalizedQuery
                     ? `No records found matching "${searchQuery}".`
                     : 'No records available.'}
