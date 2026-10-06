@@ -16,7 +16,11 @@ function App() {
 
   return (
     <>
-      <Navbar activePage={activePage} onNavigate={setActivePage} />
+      <Navbar
+        activePage={activePage}
+        onNavigate={setActivePage}
+        onLogout={() => setIsLoggedIn(false)}
+      />
 
       <main>
         {activePage === 'Home' && (
