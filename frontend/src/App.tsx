@@ -1,48 +1,122 @@
 // INT-01 — Login flow wired to backend authentication API.
 // INT-02 — Registration form wired to backend registration API.
+// INT-03 — Connect "Add Record" form to Create Record API.
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Navbar from './components/Navbar'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ViewRecordsTable, { type ViewRecord } from './pages/ViewRecordsTable'
+import AddRecordForm from './AddRecordForm'
+import { fetchRecords } from './api'
+import { readStoredSession, clearStoredSession } from './session'
+import type { AuthSession } from './api'
+import type { ApiRecord } from './api'
 import './App.css'
 
 type Page     = 'Home' | 'Dashboard' | 'Records'
 type AuthView = 'login' | 'register'
+
+interface AppRecord extends ViewRecord {
+  apiRecord: ApiRecord
+}
+
+function toViewRecord(record: ApiRecord): AppRecord {
+  return {
+    id: `REC-${record.id.toString().padStart(4, '0')}`,
+    title: record.title,
+    category: 'General',
+    updated: new Date(record.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    status: record.status === 'active' ? 'Pending' : 'Completed',
+    apiRecord: record,
+  }
+}
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [authView, setAuthView]     = useState<AuthView>('login')
   const [activePage, setActivePage] = useState<Page>('Home')
   const [recordSearch, setRecordSearch] = useState('')
+  const [records, setRecords] = useState<AppRecord[]>([])
+  const [loadingRecords, setLoadingRecords] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [session, setSession] = useState<AuthSession | null>(null)
+
+  useEffect(() => {
+    const stored = readStoredSession()
+    if (stored) {
+      setSession(stored)
+      setIsLoggedIn(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (session) {
+      loadRecords()
+    }
+  }, [session])
+
+  async function loadRecords() {
+    if (!session) return
+    setLoadingRecords(true)
+    try {
+      const apiRecords = await fetchRecords(session.token)
+      setRecords(apiRecords.map(toViewRecord))
+    } catch (error) {
+      console.error('Failed to load records:', error)
+    } finally {
+      setLoadingRecords(false)
+    }
+  }
+
+  function handleLogin() {
+    const stored = readStoredSession()
+    if (stored) {
+      setSession(stored)
+      setIsLoggedIn(true)
+    }
+  }
+
+  function handleRegister() {
+    const stored = readStoredSession()
+    if (stored) {
+      setSession(stored)
+      setIsLoggedIn(true)
+      setAuthView('login')
+    }
+  }
+
+  function handleLogout() {
+    clearStoredSession()
+    setSession(null)
+    setIsLoggedIn(false)
+    setAuthView('login')
+    setRecords([])
+  }
+
+  async function handleRecordCreated(apiRecord: ApiRecord) {
+    setRecords((prev) => [toViewRecord(apiRecord), ...prev])
+    setShowAddForm(false)
+  }
 
   // ── Auth screens ───────────────────────────────────────────
   if (!isLoggedIn) {
     if (authView === 'register') {
       return (
         <RegisterPage
-          onRegister={() => setAuthView('login')}
+          onRegister={handleRegister}
           onGoToLogin={() => setAuthView('login')}
         />
       )
     }
     return (
       <LoginPage
-        onLogin={() => setIsLoggedIn(true)}
+        onLogin={handleLogin}
         onGoToRegister={() => setAuthView('register')}
       />
     )
   }
-
-  // ── Sample Records Data ────────────────────────────────────
-  const sampleRecords: ViewRecord[] = [
-    { id: 'REC-1001', title: 'Q3 Financial Audit', category: 'Finance', updated: '2 hours ago', status: 'Completed' },
-    { id: 'REC-1002', title: 'Employee Onboarding Docs', category: 'HR', updated: 'Yesterday', status: 'Completed' },
-    { id: 'REC-1003', title: 'Server Migration Plan', category: 'IT', updated: '3 days ago', status: 'Pending' },
-    { id: 'REC-1004', title: 'Vendor Contract Review', category: 'Legal', updated: 'Last week', status: 'Completed' },
-  ]
 
   // ── Main App Layout ────────────────────────────────────────
   return (
@@ -50,10 +124,7 @@ export default function App() {
       <Navbar
         activePage={activePage}
         onNavigate={setActivePage}
-        onLogout={() => {
-          setIsLoggedIn(false)
-          setAuthView('login')
-        }}
+        onLogout={handleLogout}
       />
 
       <main>
@@ -133,12 +204,31 @@ export default function App() {
                 value={recordSearch}
                 onChange={(e) => setRecordSearch(e.target.value)}
               />
-              <button type="button" className="records-btn">
+              <button type="button" className="records-btn" onClick={() => setShowAddForm(true)}>
                 <span>+ Add Record</span>
               </button>
             </div>
 
-            <ViewRecordsTable records={sampleRecords} searchQuery={recordSearch} />
+            {showAddForm && session && (
+              <div className="modal-overlay" onClick={() => setShowAddForm(false)} role="dialog" aria-modal="true" aria-labelledby="add-record-title">
+                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                  <h2 id="add-record-title">Add New Record</h2>
+                  <button className="modal-close" onClick={() => setShowAddForm(false)} aria-label="Close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                  <AddRecordForm session={session} onCreated={handleRecordCreated} />
+                </div>
+              </div>
+            )}
+
+            {loadingRecords ? (
+              <p className="loading-records">Loading records…</p>
+            ) : (
+              <ViewRecordsTable records={records} searchQuery={recordSearch} />
+            )}
           </section>
         )}
       </main>

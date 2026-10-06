@@ -1,10 +1,7 @@
 import { useState, type FormEvent } from 'react'
+import { register } from '../api'
+import { storeSession } from '../session'
 import './RegisterPage.css'
-
-interface RegisterPageProps {
-  onRegister: () => void
-  onGoToLogin: () => void
-}
 
 // Password strength helper
 function getPasswordStrength(pw: string): { level: 0 | 1 | 2 | 3; label: string } {
@@ -40,6 +37,11 @@ const AlertIcon = () => (
   </svg>
 )
 
+interface RegisterPageProps {
+  onRegister: (session: { user: { name: string } }) => void
+  onGoToLogin: () => void
+}
+
 export default function RegisterPage({ onRegister, onGoToLogin }: RegisterPageProps) {
   const [fullName, setFullName]         = useState('')
   const [email, setEmail]               = useState('')
@@ -66,7 +68,7 @@ export default function RegisterPage({ onRegister, onGoToLogin }: RegisterPagePr
     return ''
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
 
@@ -76,14 +78,16 @@ export default function RegisterPage({ onRegister, onGoToLogin }: RegisterPagePr
       return
     }
 
-    // Mock registration — replace with real API call later
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
+    try {
+      const session = await register({ name: fullName, email, password })
+      storeSession(session)
       setSuccess(true)
-      // Auto-redirect to login after a short delay
-      setTimeout(() => onRegister(), 1500)
-    }, 700)
+      setTimeout(() => onRegister({ user: { name: session.user.name } }), 1500)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed.')
+      setLoading(false)
+    }
   }
 
   return (

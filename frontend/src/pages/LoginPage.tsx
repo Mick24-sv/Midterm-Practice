@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
+import { login } from '../api'
+import { storeSession } from '../session'
 import './LoginPage.css'
 
 interface LoginPageProps {
-  onLogin: () => void
+  onLogin: (session: { user: { name: string } }) => void
   onGoToRegister: () => void
 }
 
@@ -13,7 +15,7 @@ export default function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
 
@@ -22,16 +24,15 @@ export default function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
       return
     }
 
-    // Mock authentication — replace with real API call later
     setLoading(true)
-    setTimeout(() => {
-      if (username === 'admin' && password === 'admin123') {
-        onLogin()
-      } else {
-        setError('Invalid username or password.')
-        setLoading(false)
-      }
-    }, 600)
+    try {
+      const session = await login({ email: username, password })
+      storeSession(session)
+      onLogin({ user: { name: session.user.name } })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid email or password.')
+      setLoading(false)
+    }
   }
 
   return (

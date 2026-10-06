@@ -142,6 +142,32 @@ export interface ApiRecord {
   updated_at: string
 }
 
+export async function fetchRecords(token: string): Promise<ApiRecord[]> {
+  let response: Response
+  try {
+    response = await fetch(`${apiBaseUrl}/records`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch {
+    throw new ApiError(
+      'Could not reach the records API. Check that the backend is running.',
+      0,
+      'network_error',
+    )
+  }
+
+  if (!response.ok) {
+    throw await toApiError(response)
+  }
+
+  const payload = await response.json() as { records: ApiRecord[] }
+  return payload.records
+}
+
 export async function createRecord(
   token: string,
   data: { title: string; description: string; status: 'active' | 'archived' },
