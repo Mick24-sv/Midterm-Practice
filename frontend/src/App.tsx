@@ -296,7 +296,8 @@ export default function App() {
               <input
                 type="search"
                 className="records-search"
-                placeholder="Search by ID, title, or category..."
+                aria-label="Search records"
+                placeholder="Search by ID, title, category, date, or status..."
                 value={recordSearch}
                 onChange={(e) => setRecordSearch(e.target.value)}
               />

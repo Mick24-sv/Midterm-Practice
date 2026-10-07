@@ -25,9 +25,8 @@ export default function ViewRecordsTable({
 }: ViewRecordsTableProps) {
   const normalizedQuery = searchQuery.trim().toLowerCase()
   const visibleRecords = records.filter((record) =>
-    [record.id, record.title, record.category].some((value) =>
-      value.toLowerCase().includes(normalizedQuery),
-    ),
+    [record.id, record.title, record.category, record.updated, record.status]
+      .some((value) => value.toLowerCase().includes(normalizedQuery)),
   )
 
   return (
