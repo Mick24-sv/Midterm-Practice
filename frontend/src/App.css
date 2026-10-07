@@ -155,6 +155,55 @@ main {
   color: var(--text);
 }
 
+.records-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.records-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.records-pagination__controls button {
+  font: inherit;
+  font-weight: 600;
+  padding: 7px 12px;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.records-pagination__controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.records-pagination__controls button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .records-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .records-pagination__controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

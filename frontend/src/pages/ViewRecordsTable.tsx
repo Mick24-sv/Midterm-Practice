@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 export interface ViewRecord {
   id: string
   title: string
@@ -16,6 +18,8 @@ interface ViewRecordsTableProps {
   deletingIds?: readonly string[]
 }
 
+const RECORDS_PER_PAGE = 10
+
 export default function ViewRecordsTable({
   records,
   searchQuery,
@@ -24,9 +28,18 @@ export default function ViewRecordsTable({
   deletingIds = [],
 }: ViewRecordsTableProps) {
   const normalizedQuery = searchQuery.trim().toLowerCase()
-  const visibleRecords = records.filter((record) =>
+  const [pageState, setPageState] = useState({ query: normalizedQuery, index: 0 })
+  const filteredRecords = records.filter((record) =>
     [record.id, record.title, record.category, record.updated, record.status]
       .some((value) => value.toLowerCase().includes(normalizedQuery)),
+  )
+  const pageCount = Math.ceil(filteredRecords.length / RECORDS_PER_PAGE)
+  const pageIndex = pageState.query === normalizedQuery ? pageState.index : 0
+  const currentPage = Math.min(pageIndex, Math.max(pageCount - 1, 0))
+  const firstRecordIndex = currentPage * RECORDS_PER_PAGE
+  const visibleRecords = filteredRecords.slice(
+    firstRecordIndex,
+    firstRecordIndex + RECORDS_PER_PAGE,
   )
 
   return (
@@ -108,6 +121,35 @@ export default function ViewRecordsTable({
           </tbody>
         </table>
       </div>
+      {pageCount > 1 && (
+        <nav className="records-pagination" aria-label="Record pages">
+          <span aria-live="polite">
+            Showing {firstRecordIndex + 1}–{firstRecordIndex + visibleRecords.length} of{' '}
+            {filteredRecords.length}
+          </span>
+          <div className="records-pagination__controls">
+            <button
+              type="button"
+              onClick={() => setPageState({ query: normalizedQuery, index: currentPage - 1 })}
+              disabled={currentPage === 0}
+              aria-label="Go to previous page"
+            >
+              Previous
+            </button>
+            <span aria-current="page">
+              Page {currentPage + 1} of {pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPageState({ query: normalizedQuery, index: currentPage + 1 })}
+              disabled={currentPage >= pageCount - 1}
+              aria-label="Go to next page"
+            >
+              Next
+            </button>
+          </div>
+        </nav>
+      )}
     </section>
   )
 }
