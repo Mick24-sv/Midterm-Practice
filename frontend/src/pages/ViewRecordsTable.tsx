@@ -85,7 +85,7 @@ export default function ViewRecordsTable({
                           onClick={() => onDelete(record)}
                           disabled={deletingIds.includes(record.id)}
                         >
-                          {deletingIds.includes(record.id) ? 'Deleting…' : 'Delete'}
+                          {deletingIds.includes(record.id) ? 'Deleting…' : 'Delete Record'}
                           <span className="visually-hidden"> record {record.id}</span>
                         </button>
                       )}
