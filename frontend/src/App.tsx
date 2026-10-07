@@ -404,7 +404,9 @@ export default function App() {
                 </button>
               </div>
             ) : loadingRecords ? (
-              <p className="loading-records">Loading records…</p>
+              <p className="loading-records" role="status" aria-live="polite">
+                Loading records…
+              </p>
             ) : (
               <ViewRecordsTable
                 records={records}
